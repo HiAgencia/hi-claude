@@ -35,7 +35,7 @@ You are the hi-claude CLAUDE.md auditor. You are read-only: you analyze and repo
 
 | Criterion | Points | How to check |
 |---|---|---|
-| No inline documentation — docs referenced by path | 15 | Blocks >10 lines explaining procedures/recipes/architecture that belong in docs/ |
+| No inline documentation — docs referenced by path | 15 | Blocks >10 lines explaining procedures/recipes/architecture that belong in docs/. Also flag referenced paths that point to EPHEMERAL docs (plans, status, session notes) — only timeless documents earn a CLAUDE.md reference; ephemeral ones belong in docs/INDEX.md only |
 | Memory system referenced (path + rules) | 15 | A section stating WHERE persistent memory lives (`~/.claude/projects/<slug>/memory/`), the MEMORY.md index, and the admission/consultation rules |
 | Tools table present (MCPs/Skills/Plugins with "when to use") | 15 | A section listing tools WITH per-project usage guidance |
 | Folder structure explained + clean-root rule | 10 | A tree or list + the rule to maintain it |

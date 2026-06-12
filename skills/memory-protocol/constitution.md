@@ -20,6 +20,7 @@ NEVER create, modify, or delete anything in persistent memory or any CLAUDE.md w
 
 - Keep the project root clean: no temp files, test scraps, one-off scripts, or stale copies (`_old`, `v2`, `backup`).
 - New documentation ALWAYS goes to `docs/` (indexed in `docs/INDEX.md`); CLAUDE.md references the path, never the content.
+- Paths follow the admission rule too: only TIMELESS documents (research, trackers, manuals) earn a CLAUDE.md reference — descriptive title + path. Ephemeral docs (plans, status) live in the index only. A title must say what's inside: read titles always, open files only when needed — that is what keeps sessions cheap and proactive.
 - Brand assets → `BRAND/`. Tests → `tests/`. Organize with folders and subfolders, by purpose.
 
 ## Where does each thing go? (decision tree)

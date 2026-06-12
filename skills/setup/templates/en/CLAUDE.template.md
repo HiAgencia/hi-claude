@@ -29,7 +29,12 @@ This project is governed by the **hi-claude** plugin (installed and active): it 
 
 ## Documentation
 
-All documentation is indexed in **`docs/INDEX.md`** — start there.
+All documentation is indexed in **`docs/INDEX.md`** — start there: read the title, open only what you need.
+
+Key documents (timeless only — descriptive title + path):
+{{KEY_DOCS}}
+
+<!-- Plans and status docs live in docs/INDEX.md, not here. Only timeless knowledge earns a reference in this file. -->
 
 ## Tools for this project
 

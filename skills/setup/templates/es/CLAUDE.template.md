@@ -29,7 +29,12 @@ Este proyecto se rige por el plugin **hi-claude** (instalado y activo): él inye
 
 ## Documentación
 
-Toda la documentación está indexada en **`docs/INDEX.md`** — empezá por ahí.
+Toda la documentación está indexada en **`docs/INDEX.md`** — empezá por ahí: leé el título y abrí solo lo que haga falta.
+
+Documentos clave (solo atemporales — título descriptivo + path):
+{{KEY_DOCS}}
+
+<!-- Los planes y estados viven en docs/INDEX.md, no acá. Solo lo atemporal gana una referencia en este archivo. -->
 
 ## Herramientas de este proyecto
 

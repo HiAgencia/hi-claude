@@ -48,3 +48,4 @@ Notes:
 
 - Hard cap: 200 lines / 25KB — content beyond is silently NOT loaded. Keep it lean.
 - Every memory file MUST have exactly one index line; no orphans, no broken links.
+- The index IS the memory's table of contents: title + hook must say what's inside, so sessions read titles every time and open individual files only when relevant. That path-referential discipline is what keeps memory powerful AND cheap.
