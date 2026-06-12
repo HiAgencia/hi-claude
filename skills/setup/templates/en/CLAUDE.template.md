@@ -12,6 +12,13 @@ This project is governed by the **hi-claude** plugin (installed and active): it 
 - Documentation does **NOT live here**: it goes to `docs/` (indexed in `docs/INDEX.md`); this file only references paths.
 - Clean root: nothing temporary, experimental, or stale lying around. Everything in its folder.
 
+## This project's persistent memory
+
+- Lives at: `{{MEMORY_PATH}}`
+- Index: `MEMORY.md` — loaded at the start of every session (max 200 lines). Individual memories load on demand.
+- Types: `user` (who the user is) · `feedback` (corrections and validated approaches) · `project` (decisions) · `reference` (external systems).
+- Only TIMELESS, PREFERENTIAL, or LIMITING knowledge enters — always with user approval.
+
 ## Project structure
 
 ```

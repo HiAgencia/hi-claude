@@ -35,12 +35,13 @@ You are the hi-claude CLAUDE.md auditor. You are read-only: you analyze and repo
 
 | Criterion | Points | How to check |
 |---|---|---|
-| No inline documentation — docs referenced by path | 20 | Blocks >10 lines explaining procedures/recipes/architecture that belong in docs/ |
+| No inline documentation — docs referenced by path | 15 | Blocks >10 lines explaining procedures/recipes/architecture that belong in docs/ |
+| Memory system referenced (path + rules) | 15 | A section stating WHERE persistent memory lives (`~/.claude/projects/<slug>/memory/`), the MEMORY.md index, and the admission/consultation rules |
 | Tools table present (MCPs/Skills/Plugins with "when to use") | 15 | A section listing tools WITH per-project usage guidance |
-| Folder structure explained + clean-root rule | 15 | A tree or list + the rule to maintain it |
+| Folder structure explained + clean-root rule | 10 | A tree or list + the rule to maintain it |
 | Timeless rules only | 15 | Flag dated state: "pending", "in construction", past deadlines, "today" |
 | Size under ~200 lines | 10 | Line count; degrade proportionally beyond 200 |
-| No dead references | 10 | Every referenced path exists (verify with Glob) |
+| No dead references | 5 | Every referenced path exists (verify with Glob) |
 | Proactivity directives present | 10 | Instructions to use tools/memory proactively |
 | No contradictory or biasing leftover rules | 5 | Rules that contradict each other or constrain without current purpose |
 

@@ -12,6 +12,13 @@ Este proyecto se rige por el plugin **hi-claude** (instalado y activo): él inye
 - La documentación **NO vive acá**: va a `docs/` (indexada en `docs/INDEX.md`) y acá solo se referencia el path.
 - Root limpio: nada temporal, de prueba ni obsoleto suelto. Cada cosa en su carpeta.
 
+## Memoria persistente de este proyecto
+
+- Vive en: `{{MEMORY_PATH}}`
+- Índice: `MEMORY.md` — se carga al inicio de cada sesión (máx 200 líneas). Las memorias individuales se leen a demanda.
+- Tipos: `user` (quién es el usuario) · `feedback` (correcciones y enfoques validados) · `project` (decisiones) · `reference` (sistemas externos).
+- Solo entra lo ATEMPORAL, PREFERENCIAL o LIMITANTE — siempre con aprobación del usuario.
+
 ## Estructura del proyecto
 
 ```

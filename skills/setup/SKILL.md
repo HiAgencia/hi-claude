@@ -29,6 +29,7 @@ Ask in the user's language, with simple words:
 Present the exact plan: the file tree to create and the full CLAUDE.md content, built from `${CLAUDE_PLUGIN_ROOT}/skills/setup/templates/<lang>/CLAUDE.template.md` with every `{{PLACEHOLDER}}` filled:
 
 - `{{PROJECT_NAME}}`, `{{PROJECT_DESCRIPTION}}` — from Q1
+- `{{MEMORY_PATH}}` — the REAL memory directory for this project: list `~/.claude/projects/` and match the slug derived from the project path (path with separators/specials replaced by dashes). If no match exists yet, use the derived `~/.claude/projects/<slug>/memory/` form anyway — the directory appears with the first saved memory.
 - `{{FOLDER_TREE}}` — base structure by project type: always `docs/`; add `src/` + `tests/` for Code; `BRAND/` + `content/` for Marketing; `research/` for Documents
 - `{{TOOLS_TABLE}}` — only the tools selected in Q3, each with a "when to use it in this project" line you write
 - `{{USER_RULES}}` — the limits from Q4, verbatim, marked as non-negotiable
