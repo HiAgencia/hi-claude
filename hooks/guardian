@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# PreToolUse guard for hi-claude: any Write/Edit targeting a governed file
+# (CLAUDE.md, CLAUDE.local.md, MEMORY.md, or persistent-memory files) returns
+# permissionDecision "ask" so the user always confirms. Everything else
+# passes through untouched (empty output, exit 0).
+set -euo pipefail
+
+input=$(cat)
+
+# Extract tool_input.file_path from the hook JSON without jq.
+# First occurrence wins: tool_input serializes file_path before content,
+# so a "file_path" string embedded in the content cannot shadow the real one.
+file_path=$(printf '%s' "$input" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*:[[:space:]]*"\(.*\)"/\1/')
+
+# No file_path in the payload -> not a file write we govern.
+if [ -z "$file_path" ]; then
+  exit 0
+fi
+
+# Normalize: JSON doubles backslashes; unify separators, collapse dupes, lowercase.
+normalized=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
+base="${normalized##*/}"
+
+governed=""
+case "$base" in
+  claude.md|claude.local.md|memory.md) governed="yes" ;;
+esac
+case "$normalized" in
+  *.claude/projects/*/memory/*.md) governed="yes" ;;
+esac
+
+if [ -n "$governed" ]; then
+  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "PreToolUse",\n    "permissionDecision": "ask",\n    "permissionDecisionReason": "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."\n  }\n}\n'
+fi
+
+exit 0

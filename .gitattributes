@@ -1,0 +1,3 @@
+# Hook scripts must keep their exact line endings (bash breaks on CRLF shebangs).
+hooks/** -text
+*.sh text eol=lf

@@ -1,0 +1,12 @@
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local-only Claude config
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Logs and temp
+*.log
+tmp/

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "hi-claude",
+  "description": "Hi Agencia's plugin marketplace — home of hi-claude, the best-practices working method for Claude Code.",
+  "owner": {
+    "name": "Hi Agencia",
+    "url": "https://github.com/HiAgencia"
+  },
+  "plugins": [
+    {
+      "name": "hi-claude",
+      "description": "Governed memory, curated CLAUDE.md, clean project structure, and audits — best practices from day 1, for technical and non-technical users alike.",
+      "source": "./",
+      "category": "productivity",
+      "tags": ["memory", "claude-md", "best-practices", "organization", "onboarding", "espanol"]
+    }
+  ]
+}
