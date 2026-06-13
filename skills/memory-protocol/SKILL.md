@@ -18,7 +18,7 @@ Decide whether a piece of knowledge deserves persistence, where it goes, and wri
    - `reference` — pointers to external systems (URLs, boards, dashboards)
 4. **Draft the entry** in the EXACT format defined in `references/memory-schema.md`. Read that file before writing your first memory of the session.
 5. **Propose, then wait.** Show the user (in their language): target filename, type, and the full content. Ask for approval. NEVER write without it — a PreToolUse guard will force confirmation anyway.
-6. **Write + index.** On approval: write the file, then add one line to `MEMORY.md`. Keep the index under 200 lines (it truncates silently beyond that); if near the limit, propose consolidation first.
+6. **Write + index.** On approval: write the file, then add one line to `MEMORY.md`. Keep the index under 200 lines (it truncates silently beyond that); when it passes ~150 lines, propose consolidation first.
 7. **Replacements.** If the new knowledge corrects an existing memory, write `Replaces obsolete memory: [[old-name]]` in the body and propose deleting the old file in the same approval.
 
 ## Do NOT persist

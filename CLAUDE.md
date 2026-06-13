@@ -5,9 +5,10 @@ Claude Code plugin packaging the hi-claude method: governed memory, curated CLAU
 
 ## How to work here — the hi-claude method
 
-- Only TIMELESS, PREFERENTIAL, or LIMITING knowledge enters this file or memory.
+- Persistent memory lives in `~/.claude/projects/<slug>/memory/`; `MEMORY.md` is its index — consult it before non-trivial work, even when you think you remember.
+- Only TIMELESS, PREFERENTIAL, or LIMITING knowledge enters this file or memory — paths included: only timeless docs earn a reference here.
 - ALWAYS consult before saving/modifying/deleting in memory or this file.
-- Documentation does NOT live here: `docs/` + `docs/INDEX.md`; this file only references paths.
+- Documentation does NOT live here: `docs/` with `docs/INDEX.md` as the mandatory entry point; this file only references paths.
 - Clean root; everything in its folder.
 
 ## Project structure
@@ -21,6 +22,15 @@ BRAND/            Hi Agencia logo (white = dark mode, dark = light mode, used by
 docs/             INDEX.md (public docs index)
 tests/fixtures/   stdin fixtures for hook testing
 ```
+
+## Tools
+
+| Tool | When to use |
+|---|---|
+| skill: memory-protocol | Before any write to memory or this file — admission + consultation rules |
+| skill: setup | Bootstrapping a CLAUDE.md / docs/INDEX.md from the es/en templates |
+| skill: audit (+ the 3 agents in agents/) | On-demand health check of CLAUDE.md, memory, and organization; run before each release |
+| context7 (MCP) | Current Claude Code plugin/skill/hook API docs before editing manifests or hook scripts |
 
 ## Key rules
 

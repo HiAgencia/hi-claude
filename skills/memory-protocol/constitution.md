@@ -31,7 +31,7 @@ NEVER create, modify, or delete anything in persistent memory or any CLAUDE.md w
 - Rule that only applies to some files → `.claude/rules/` with `paths:` scoping
 - Preference that applies to ALL the user's projects → user level (`~/.claude/`), saved once
 
-Persistent memory lives at `~/.claude/projects/<project-slug>/memory/` — `MEMORY.md` is the index (loaded every session), individual memories load on demand. The project's CLAUDE.md must reference this location and these rules (the setup skill generates that section; the auditor checks it).
+Persistent memory lives at `~/.claude/projects/<project-slug>/memory/` — `MEMORY.md` is the index (loaded every session), individual memories load on demand. The canonical file format is the memory-protocol skill's `references/memory-schema.md`. The project's CLAUDE.md must reference this location and these rules (the setup skill generates that section; the auditor checks it).
 
 ## Proactivity
 

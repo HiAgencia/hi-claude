@@ -11,7 +11,9 @@
 
 <p align="center">
   <strong>The first thing you should say to Claude in every new project.</strong><br>
-  <em>Lo primero que deberías decirle a Claude en cada proyecto nuevo.</em>
+  <em>Lo primero que deberías decirle a Claude en cada proyecto nuevo.</em><br><br>
+  Install once. Every session remembers only what matters.<br>
+  <em>Instalalo una vez. Cada sesión recuerda solo lo que importa.</em>
 </p>
 
 <p align="center">
@@ -63,6 +65,7 @@ Restart the session (or run `/reload-plugins`). There is no step 3.
 | **The Guardian** | Nothing gets written to CLAUDE.md or persistent memory without your explicit confirmation. Enforced by code, not by trust. |
 | **The memory protocol** | Kicks in on its own when you correct something, confirm an approach, or state a preference ("I don't like...", "from now on...", "recordá que..."). It proposes what to remember; you decide. |
 | **Three auditors** | Read-only reviewers for CLAUDE.md, memory, and organization. Every finding cites its evidence, two findings per category at most, and inventing problems is off the table. Secrets in plain text mean an automatic F. |
+| **The path index** | CLAUDE.md and the memory index reference paths instead of containing content. A descriptive title tells every session what exists; files get opened only when needed. That is what keeps projects cheap in tokens and Claude proactive. |
 
 ## The admission rule
 
@@ -73,6 +76,17 @@ Restart the session (or run `/reload-plugins`). There is no step 3.
 > Everything else: ephemeral state dies with the session, and documentation goes to `docs/`. CLAUDE.md keeps the path, never the content.
 
 That one rule is the reason hi-claude projects stay sharp while others drown in their own notes.
+
+## What sharp looks like
+
+After a few weeks of real work, an audit might find:
+
+- A CLAUDE.md bloated with pasted procedures → moved to `docs/`, one path reference left behind
+- A stale task list from a closed sprint, living in memory → deleted
+- The same preference saved three times in three wordings → merged into one
+- A production token sitting in plain text → flagged first, before anything else
+
+Everything else stays sharp on its own, because only what deserves to survive the session ever got saved.
 
 ## Numbers, not promises
 
@@ -145,6 +159,7 @@ Reiniciá la sesión (o corré `/reload-plugins`). No hay paso 3.
 | **El Guardián** | Nada se escribe en el CLAUDE.md ni en la memoria sin tu confirmación explícita. Garantizado por código, no por confianza. |
 | **El protocolo de memoria** | Se activa solo cuando corregís algo, confirmás un enfoque o declarás una preferencia ("no me gusta...", "de ahora en más...", "recordá que..."). Propone qué recordar; vos decidís. |
 | **Tres auditores** | Revisores de solo lectura para CLAUDE.md, memoria y organización. Cada hallazgo cita su evidencia, máximo dos por categoría, y tienen prohibido inventar problemas. Secretos en texto plano: F automática. |
+| **El índice de paths** | El CLAUDE.md y el índice de memoria referencian paths en lugar de contener contenido. Un título descriptivo le dice a cada sesión qué existe; los archivos se abren solo cuando hacen falta. Eso es lo que mantiene los proyectos baratos en tokens y a Claude proactivo. |
 
 ## La regla de admisión
 
@@ -155,6 +170,17 @@ Reiniciá la sesión (o corré `/reload-plugins`). No hay paso 3.
 > Todo lo demás: el estado efímero muere con la sesión, y la documentación va a `docs/`. El CLAUDE.md guarda el path, nunca el contenido.
 
 Esa única regla es la razón por la que los proyectos hi-claude se mantienen afilados mientras otros se ahogan en sus propias notas.
+
+## Así se ve "afilado"
+
+Después de unas semanas de trabajo real, una auditoría podría encontrar:
+
+- Un CLAUDE.md hinchado con procedimientos pegados → movidos a `docs/`, queda una referencia de path
+- Una lista de tareas vencida de un sprint cerrado, viviendo en memoria → eliminada
+- La misma preferencia guardada tres veces con tres redacciones → fusionada en una
+- Un token de producción en texto plano → marcado primero, antes que cualquier otra cosa
+
+Todo lo demás se mantiene afilado solo, porque únicamente lo que merece sobrevivir a la sesión llegó a guardarse.
 
 ## Números, no promesas
 
