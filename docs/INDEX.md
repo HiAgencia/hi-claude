@@ -2,7 +2,7 @@
 
 > Puerta de entrada a toda la documentación pública del repo. Cada entrada dice qué es y cuándo leerla.
 
-**Estado:** v1.0.0 — en producción.
+**Estado:** en producción (versión vigente en `.claude-plugin/plugin.json`; tags en GitHub).
 
 ## Documentos
 
