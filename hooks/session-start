@@ -1,23 +1,43 @@
 #!/usr/bin/env bash
-# SessionStart hook for hi-claude: injects the Constitution into every session.
-set -euo pipefail
+# SessionStart hook for hi-claude: injects the method and, when the project
+# has one, the open-work section of docs/ROADMAP.md.
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+. "${SCRIPT_DIR}/json-lib"
 
-constitution=$(cat "${PLUGIN_ROOT}/skills/memory-protocol/constitution.md" 2>&1 || echo "hi-claude: constitution.md not found")
+MAX_ROADMAP_CHARS=4000
 
-# Escape for JSON embedding (single C-level pass per substitution).
-escape_for_json() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
-}
+input=$(cat 2>/dev/null || true)
 
-payload=$(escape_for_json "$constitution")
-printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "<hi-claude-method>\\n%s\\n</hi-claude-method>"\n  }\n}\n' "$payload"
+# cwd from the payload (JSON doubles backslashes); fall back to the process cwd.
+cwd=$(json_str "$input" cwd)
+cwd=$(printf '%s' "$cwd" | sed 's#\\\\#\\#g')
+[ -z "$cwd" ] && cwd="$PWD"
+
+constitution=$(cat "${PLUGIN_ROOT}/skills/memory-protocol/constitution.md" 2>/dev/null \
+  || printf 'hi-claude: constitution.md not found')
+
+payload="<hi-claude-method>
+${constitution}
+</hi-claude-method>"
+
+roadmap="${cwd}/docs/ROADMAP.md"
+if [ -f "$roadmap" ]; then
+  open_work=$(sed -n '/<!-- hi-claude:en-curso -->/,/<!-- \/hi-claude:en-curso -->/p' "$roadmap" | sed '1d;$d')
+  if [ -n "$(printf '%s' "$open_work" | tr -d '[:space:]')" ]; then
+    if [ "${#open_work}" -gt "$MAX_ROADMAP_CHARS" ]; then
+      open_work="${open_work:0:$MAX_ROADMAP_CHARS}
+[truncated — open docs/ROADMAP.md for the rest]"
+    fi
+    payload="${payload}
+
+## Open work (docs/ROADMAP.md)
+
+${open_work}"
+  fi
+fi
+
+emit_context SessionStart "$payload"
 exit 0

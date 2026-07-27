@@ -67,5 +67,19 @@ c')
 out=$(json_str '{"cwd":"C:\\proj","tool_name":"Write"}' tool_name)
 [ "$out" = "Write" ] && ok "json-lib: json_str" || ko "json-lib: json_str" "$out"
 
+# --- session-start ---
+proj=$(make_project)
+f=$(fixture_with_cwd session-start.json "$proj")
+check "session-start: injects constitution" session-start "$f" contains "hi-claude-method"
+check "session-start: injects open work"    session-start "$f" contains "Sellar el kickoff con hora"
+check "session-start: stops at the marker"  session-start "$f" notcontains "esto no deberia inyectarse"
+rm -rf "$proj" "$f"
+
+proj2=$(mktemp -d)
+f2=$(fixture_with_cwd session-start.json "$proj2")
+check "session-start: no roadmap, no noise" session-start "$f2" notcontains "Open work"
+check "session-start: still injects method" session-start "$f2" contains "hi-claude-method"
+rm -rf "$proj2" "$f2"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
