@@ -59,7 +59,13 @@ fixture_with_cwd() {
   printf '%s' "$out"
 }
 
-# ---- cases are appended by each task ----
+# --- json-lib ---
+. "$ROOT/hooks/json-lib"
+out=$(escape_for_json 'a"b
+c')
+[ "$out" = 'a\"b\nc' ] && ok "json-lib: escape_for_json" || ko "json-lib: escape_for_json" "$out"
+out=$(json_str '{"cwd":"C:\\proj","tool_name":"Write"}' tool_name)
+[ "$out" = "Write" ] && ok "json-lib: json_str" || ko "json-lib: json_str" "$out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

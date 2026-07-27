@@ -1,0 +1,32 @@
+# Shared JSON helpers for hi-claude hooks. Sourced, never executed directly.
+# No jq: the plugin ships with zero dependencies.
+
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+# json_str <payload> <key> — first string value for that key.
+# tool_input serializes file_path/command before content, so a key embedded
+# in the content cannot shadow the real one.
+json_str() {
+    printf '%s' "$1" \
+      | grep -o "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" \
+      | head -n 1 \
+      | sed 's/.*:[[:space:]]*"\(.*\)"/\1/'
+}
+
+emit_context() {
+    printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "%s",\n    "additionalContext": "%s"\n  }\n}\n' \
+      "$1" "$(escape_for_json "$2")"
+}
+
+emit_decision() {
+    printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "PreToolUse",\n    "permissionDecision": "%s",\n    "permissionDecisionReason": "%s"\n  }\n}\n' \
+      "$1" "$(escape_for_json "$2")"
+}
