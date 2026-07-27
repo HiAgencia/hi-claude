@@ -1,6 +1,6 @@
 ---
 name: work-protocol
-description: How work gets written down and how problems get closed under the hi-claude method. Use when writing or reviewing documentation, code comments or commit messages; when a document or comment may contradict the current code; and when solving a problem, to leave the system easier to operate than it was. Triggers on "documentá", "actualizá la doc", "está desactualizado", "dejá esto documentado", "write it down", "update the docs", "is this doc stale", "why is this so hard to debug".
+description: Use BEFORE writing or updating any documentation, README, code comment or commit message — this project BANS specific patterns in written work (dated state, verdicts written as final, docs that turn into a chronicle) and the ban list lives here, so writing without it produces text that has to be redone. Also use whenever a doc or comment might contradict the current code, and when closing a problem, to leave the system easier to operate instead of just covering the symptom. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "write it down", "update the docs", "document what you changed", "is this doc stale", "why is this so hard to debug".
 ---
 
 # Work protocol (hi-claude)

@@ -94,6 +94,11 @@ out=$(HI_CLAUDE_SUBAGENT_WRITES=1 bash "$ROOT/hooks/guardian" < "$FIX/subagent-w
 # False positives cost more than they protect: a prompt on every commit trains the user to click through.
 check "guardian: commit mentioning CLAUDE.md" guardian "$FIX/bash-commit-mentions-claude-md.json" empty
 check "guardian: 2>&1 is not a write"         guardian "$FIX/bash-stderr-redirect.json"           empty
+# Writing rules ride along on markdown writes: as a skill description alone they never fired.
+check "guardian: markdown write gets the rules" guardian "$FIX/write-markdown-doc.json" contains "TIMELESS"
+check "guardian: markdown nudge is not a decision" guardian "$FIX/write-markdown-doc.json" notcontains "permissionDecision"
+check "guardian: code write gets no nudge"      guardian "$FIX/write-normal.json"       empty
+check "guardian: CLAUDE.md still asks, not nudges" guardian "$FIX/write-claude-md.json" notcontains "TIMELESS"
 
 # --- subagent-start / pre-compact ---
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"

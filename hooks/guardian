@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# PreToolUse guard for hi-claude.
+# PreToolUse policy for hi-claude.
 #   1. A subagent trying to WRITE anything -> deny (it investigates, it does not implement).
 #   2. Anyone writing a governed file (CLAUDE.md / persistent memory) -> ask.
+#   3. Anyone writing markdown -> the writing rules, in one line, with the skill that holds them.
+#      Measured: as a skill description alone this never fired, because writing prose has no
+#      decision point where a skill feels required. It is a guarantee or it is nothing.
 # Everything else passes through untouched (empty output, exit 0).
 set -uo pipefail
 
@@ -52,6 +55,14 @@ esac
 
 if [ -n "$governed" ]; then
   emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."
+  exit 0
 fi
+
+# 3. Markdown gets the writing rules. Short on purpose: it rides along on every doc write.
+case "$normalized" in
+  *.md|*.md\ *|*.md\"*|*.md\'*)
+    emit_context PreToolUse "hi-claude: written work here is TIMELESS - no dates, no \"for now\", no verdicts written as final, and no doc that turns into a chronicle of what changed. A measured result is a datum with its N, reopenable. Full rules: the hi-claude:work-protocol skill."
+    ;;
+esac
 
 exit 0
