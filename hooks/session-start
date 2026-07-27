@@ -25,11 +25,15 @@ ${constitution}
 
 roadmap="${cwd}/docs/ROADMAP.md"
 if [ -f "$roadmap" ]; then
-  open_work=$(sed -n '/<!-- hi-claude:en-curso -->/,/<!-- \/hi-claude:en-curso -->/p' "$roadmap" | sed '1d;$d')
-  # Decide on real content only: an untouched template carries a heading, an
-  # empty-marker and a format comment, and injecting that every session is noise.
-  substance=$(printf '%s\n' "$open_work" \
+  # HTML comments are scaffolding for the human editing the file (the item format
+  # reminder); they are not open work, so they never ride into the session.
+  open_work=$(sed -n '/<!-- hi-claude:en-curso -->/,/<!-- \/hi-claude:en-curso -->/p' "$roadmap" \
+    | sed '1d;$d' \
     | sed '/<!--/,/-->/d' \
+    | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
+  # Decide on real content only: an untouched template still carries a heading and an
+  # empty-marker, and injecting that every session is noise.
+  substance=$(printf '%s\n' "$open_work" \
     | grep -v '^[[:space:]]*#' \
     | grep -v '^[[:space:]]*\*(.*)\*[[:space:]]*$' \
     | tr -d '[:space:]')

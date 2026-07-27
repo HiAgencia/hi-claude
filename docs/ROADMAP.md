@@ -29,7 +29,12 @@ cualquier `description`, `hi-claude-internal/tests/triggering/run-evals.ps1` ≥
 <!-- hi-claude:en-curso -->
 ## 1. EN CURSO — máx 3
 
-*(vacío)*
+### Cerrar el gate de triggering de la v2  `[B]`
+Falta: correr la matriz completa y que la precisión no baje del gate vigente; con el resultado, llenar
+los dos números del README (badge y línea de "Números, no promesas").
+Ya resuelto: las 6 descriptions escritas y ajustadas contra dos corridas medidas; las reglas de
+escritura ya no dependen del triggering (viajan en el hook de `PreToolUse`).
+(Hecho: `run-evals.ps1` completo con `should-not` en 100% y sin `{{EVAL_` en el README.)
 
 <!-- Formato de un ítem:
 ### Título imperativo  [V]

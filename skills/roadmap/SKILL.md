@@ -1,6 +1,6 @@
 ---
 name: roadmap
-description: Use at the start of a session to recover what was in progress, when taking, splitting, pausing or closing a piece of work, when the user wants something recorded so it does not get lost, and before a context compaction — even when they only ask you to note it down. Triggers on "what were we doing", "where did we leave off", "what's left", "add this to the backlog", "don't let me forget this", "pending", "roadmap", "qué estábamos haciendo", "en qué quedamos", "qué falta", "anotá esto", "pendientes". Also use BEFORE writing docs/ROADMAP.md or docs/ESTADO.md. Governs the single register of open work under the hi-claude method.
+description: Use at the start of a session to recover what was in progress, when taking, splitting, pausing or closing a piece of work, when the user wants something recorded so it does not get lost, and before a context compaction — even when they only ask you to note it down. Triggers on "what were we doing", "where did we leave off", "what's left", "add this to the backlog", "don't let me forget this", "pending", "roadmap", "qué estábamos haciendo", "en qué quedamos", "qué falta", "anotá esto", "pendientes". Also use BEFORE writing docs/ROADMAP.md or docs/ESTADO.md. Governs the single register of open work; a quality stall with no clear cause is hi-claude:seeding-doubts instead.
 ---
 
 # ROADMAP protocol (hi-claude)

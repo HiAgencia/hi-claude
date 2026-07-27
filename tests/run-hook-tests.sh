@@ -61,6 +61,11 @@ nada relevante aca
 ### Sellar el kickoff con hora  [V]
 Falta: unificar los dos formatos de PK.
 Ya resuelto: migracion escrita y testeada.
+
+<!-- Formato de un item:
+### Titulo imperativo  [V]
+Falta: una linea.
+-->
 <!-- /hi-claude:en-curso -->
 
 ## 2. Otro bloque
@@ -92,6 +97,7 @@ f=$(fixture_with_cwd session-start.json "$proj")
 check "session-start: injects constitution" session-start "$f" contains "hi-claude-method"
 check "session-start: injects open work"    session-start "$f" contains "Sellar el kickoff con hora"
 check "session-start: stops at the marker"  session-start "$f" notcontains "esto no deberia inyectarse"
+check "session-start: drops the scaffolding" session-start "$f" notcontains "Formato de un item"
 rm -rf "$proj" "$f"
 
 proj2=$(mktemp -d)
