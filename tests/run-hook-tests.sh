@@ -91,6 +91,9 @@ check "guardian: edit memory file"           guardian "$FIX/edit-memory.json"   
 check "guardian: normal write passes"        guardian "$FIX/write-normal.json"          empty
 out=$(HI_CLAUDE_SUBAGENT_WRITES=1 bash "$ROOT/hooks/guardian" < "$FIX/subagent-write.json")
 [ -z "$out" ] && ok "guardian: escape hatch works" || ko "guardian: escape hatch works" "$out"
+# False positives cost more than they protect: a prompt on every commit trains the user to click through.
+check "guardian: commit mentioning CLAUDE.md" guardian "$FIX/bash-commit-mentions-claude-md.json" empty
+check "guardian: 2>&1 is not a write"         guardian "$FIX/bash-stderr-redirect.json"           empty
 
 # --- subagent-start / pre-compact ---
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
