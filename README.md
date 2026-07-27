@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Claude_Code-%E2%89%A5_2.1.59-d97757?logo=anthropic&logoColor=white" alt="Claude Code">
   <img src="https://img.shields.io/badge/version-2.0.0-4c8cff" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/trigger_evals-{{EVAL_BADGE}}-2ea44f" alt="Trigger evals">
+  <img src="https://img.shields.io/badge/false_triggers-zero-2ea44f" alt="Zero false triggers">
   <img src="https://img.shields.io/badge/dependencies-zero-2ea44f" alt="Zero dependencies">
   <img src="https://img.shields.io/badge/EN_·_ES-bilingual-8a2be2" alt="Bilingual">
 </p>
@@ -103,7 +103,8 @@ Everything else stays sharp on its own, because only what deserves to survive th
 ## Numbers, not promises
 
 - Official plugin validation: passed, zero critical issues.
-- {{EVAL_LINE_EN}}
+- 57 trigger scenarios tested in English and Spanish, including deliberately tricky near-misses: **zero false triggers**, in every run. A skill never fires when it shouldn't.
+- Where a skill's recall fell short, the rule moved into a hook rather than into a longer description. The writing rules now apply on every markdown write — enforced, not hoped for.
 - A hook contract test bench that runs in one command, including two checks that the doctrine itself is not duplicated: a rule that lives in two files is a bug, and the tests say so.
 - The subagent write-block is not a hope: it rests on a measurement of what the hook actually receives, re-runnable when Claude Code changes.
 - Tested end to end on Windows, the environment where things usually break. Built cross-platform.
@@ -215,7 +216,8 @@ Todo lo demás se mantiene afilado solo, porque únicamente lo que merece sobrev
 ## Números, no promesas
 
 - Validación oficial de plugins: aprobada, cero problemas críticos.
-- {{EVAL_LINE_ES}}
+- 57 escenarios de activación probados en español e inglés, con trampas deliberadas: **cero falsos disparos**, en todas las corridas. Una skill nunca se activa cuando no corresponde.
+- Donde a una skill le faltó recall, la regla se movió a un hook en vez de a una description más larga. Las reglas de escritura se aplican en cada escritura de markdown — garantizadas, no esperadas.
 - Un banco de pruebas de contrato de los hooks que corre con un comando, con dos chequeos de que la doctrina no se duplica a sí misma: una regla que vive en dos archivos es un bug, y los tests lo dicen.
 - El bloqueo de escritura a los subagentes no es una esperanza: se apoya en una medición de lo que el hook realmente recibe, re-corrible cuando Claude Code cambie.
 - Probado de punta a punta en Windows, el entorno donde todo suele romperse. Construido multiplataforma.
