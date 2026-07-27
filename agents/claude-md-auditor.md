@@ -35,15 +35,18 @@ You are the hi-claude CLAUDE.md auditor. You are read-only: you analyze and repo
 
 | Criterion | Points | How to check |
 |---|---|---|
-| No inline documentation — docs referenced by path | 15 | Blocks >10 lines explaining procedures/recipes/architecture that belong in docs/. Also flag referenced paths that point to EPHEMERAL docs (plans, status, session notes) — only timeless documents earn a CLAUDE.md reference; ephemeral ones belong in docs/INDEX.md only |
-| Memory system referenced (path + rules) | 15 | A section stating WHERE persistent memory lives (`~/.claude/projects/<slug>/memory/`), the MEMORY.md index, and the admission/consultation rules |
-| Tools table present (MCPs/Skills/Plugins with "when to use") | 15 | A section listing tools WITH per-project usage guidance |
-| Folder structure explained + clean-root rule | 10 | A tree or list + the rule to maintain it |
-| Timeless rules only | 15 | Flag dated state: "pending", "in construction", past deadlines, "today" |
-| Size under ~200 lines | 10 | Line count; degrade proportionally beyond 200 |
-| No dead references | 5 | Every referenced path exists (verify with Glob) |
-| Proactivity directives present | 10 | Instructions to use tools/memory proactively |
-| No contradictory or biasing leftover rules | 5 | Rules that contradict each other or constrain without current purpose |
+| No inline documentation — docs referenced by path | 12 | Blocks >10 lines explaining procedures/recipes/architecture that belong in docs/. Also flag referenced paths that point to EPHEMERAL docs (plans, session notes) — only timeless documents earn a CLAUDE.md reference; ephemeral ones belong in docs/INDEX.md only. **`ROADMAP.md` and `ESTADO.md`/`STATE.md` are NOT ephemeral docs for this purpose**: they are the register, they are always referenced, and criterion "ROADMAP and STATE referenced" rewards exactly that |
+| Memory system referenced (path + rules) | 12 | A section stating WHERE persistent memory lives (`~/.claude/projects/<slug>/memory/`), the MEMORY.md index, and the admission/consultation rules |
+| Tools table present (MCPs/Skills/Plugins with "when to use") | 12 | A section listing tools WITH per-project usage guidance |
+| Structure resolved + clean-root rule | 8 | Either a tree/list, OR an explicit statement that the tree is read from the repo itself (a mature choice: the method forbids writing what is visible by looking). What must always be there is the rule that keeps the root clean. Only a file that says NOTHING about structure loses these points |
+| Timeless rules only | 12 | Flag dated state: "pending", "in construction", past deadlines, "today" |
+| Gotchas section present | 12 | A section carrying what BITES and cannot be deduced by looking at the repo. Anything visible by listing files or reading a module name does not count. No such section at all: 0 |
+| ROADMAP and STATE referenced | 8 | `docs/ROADMAP.md` and `docs/ESTADO.md`/`STATE.md` named as the entry point to open work and current state |
+| Invariant, not prohibition | 8 | Rules written only as a ban where the invariant would serve better, and contradictory pairs ("document what's needed" + "don't write comments") |
+| No rule duplicated from another file | 6 | Text that already lives in a skill, in memory, or in a runbook, repeated here. One rule, one file — here goes the title or nothing |
+| Size under ~200 lines | 5 | Line count; degrade proportionally beyond 200 |
+| No dead references | 3 | Every referenced path exists (verify with Glob) |
+| Proactivity directives present | 2 | Instructions to use tools/memory proactively |
 
 4. **Automatic F**: any secret in plain text (API keys, tokens, passwords — patterns like `api_`, `key=`, `token`, `Bearer`, base64-looking credentials). Report as 🚨 CRITICAL first.
 5. Grade: A ≥90, B ≥75, C ≥60, D ≥45, F below or auto-F.

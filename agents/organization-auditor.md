@@ -37,6 +37,8 @@ You are the hi-claude organization auditor. Read-only: you map and propose; you 
 | Files named `*_old*`, `*v2*`, `*backup*`, `Untitled*`, `copy*` | archive or delete (list each) |
 | Debug artifacts: logs, snapshots, tool dumps (e.g. `.playwright-mcp/`, `*.log`) | delete; add pattern to .gitignore |
 | `docs/` exists but no `docs/INDEX.md` | create the index (offer the hi-claude template) |
+| `docs/INDEX.md` exists but lists everything flat | split it: key documents (read at session start) vs context (opened on demand) |
+| No `docs/ROADMAP.md`, or no `docs/ESTADO.md`/`STATE.md` | create the missing half of the register — what is missing and what exists are two different documents |
 | Empty folders, duplicated folder purposes | consolidate |
 | 🚨 Plain-text secrets in ANY file (config, docs, spreadsheets) | CRITICAL: report first; suggest env vars + rotation |
 
