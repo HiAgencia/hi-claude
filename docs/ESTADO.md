@@ -18,7 +18,7 @@ progresivamente.
 
 ## Qué está activo
 
-**Cuatro hooks** (`hooks/hooks.json`), todos bash sin dependencias:
+**Los hooks** (`hooks/hooks.json`), todos bash sin dependencias:
 
 | Hook | Qué garantiza |
 |---|---|
