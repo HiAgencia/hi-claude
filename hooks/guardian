@@ -55,13 +55,19 @@ all_paths=$(printf '%s' "$input" \
   | sed 's/.*:[[:space:]]*"\(.*\)"/\1/' \
   | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
 
+# Read line by line: paths carry spaces (this plugin is developed under one), and
+# word-splitting them would break the directory-shaped patterns below.
 governed=""
-for candidate in $normalized $all_paths; do
+while IFS= read -r candidate; do
+  [ -n "$candidate" ] || continue
   case "$candidate" in
     *claude.md*|*claude.local.md*|*memory.md*) governed="yes" ;;
     *.claude/projects/*/memory/*.md*)          governed="yes" ;;
   esac
-done
+done <<EOF
+$normalized
+$all_paths
+EOF
 
 if [ -n "$governed" ]; then
   emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."

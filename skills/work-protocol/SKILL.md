@@ -68,5 +68,7 @@ cheaper the system is to read, the more effective every session becomes.
 
 ## Neighbours
 
-Planning a multi-step job → `superpowers:writing-plans`. Declaring something finished →
-`superpowers:verification-before-completion`. This skill does not repeat their content.
+When the superpowers plugin is installed: planning a multi-step job → `superpowers:writing-plans`;
+declaring something finished → `superpowers:verification-before-completion`. This skill does not
+repeat their content. Without them the rules above still stand on their own — evidence before
+assertion either way.

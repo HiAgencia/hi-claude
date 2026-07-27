@@ -127,6 +127,9 @@ check "guardian: CLAUDE.md still asks, not nudges" guardian "$FIX/write-claude-m
 # Key order inside tool_input is model-controlled: a decoy file_path in the content
 # must not shadow the real governed target.
 check "guardian: decoy file_path cannot shadow" guardian "$FIX/write-shadowed-file-path.json" contains '"ask"'
+# Paths carry spaces (this plugin is developed under one): word-splitting them would
+# break the directory-shaped memory pattern.
+check "guardian: memory path with spaces"      guardian "$FIX/edit-memory-path-with-spaces.json" contains '"ask"'
 
 # --- subagent-start / pre-compact ---
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
