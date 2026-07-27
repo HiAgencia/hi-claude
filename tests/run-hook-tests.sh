@@ -77,7 +77,7 @@ rm -rf "$proj" "$f"
 
 proj2=$(mktemp -d)
 f2=$(fixture_with_cwd session-start.json "$proj2")
-check "session-start: no roadmap, no noise" session-start "$f2" notcontains "Open work"
+check "session-start: no roadmap, no noise" session-start "$f2" notcontains "## Open work (docs/ROADMAP.md)"
 check "session-start: still injects method" session-start "$f2" contains "hi-claude-method"
 rm -rf "$proj2" "$f2"
 
@@ -96,6 +96,17 @@ out=$(HI_CLAUDE_SUBAGENT_WRITES=1 bash "$ROOT/hooks/guardian" < "$FIX/subagent-w
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
 check "subagent-start: forbids implementing" subagent-start "$FIX/subagent-write.json" contains "does not implement"
 check "pre-compact: points at EN CURSO"      pre-compact    "$FIX/pre-compact.json"    contains "docs/ROADMAP.md"
+
+# --- doctrine: one rule, one file ---
+# Scope: the instruction surface Claude loads (skills/), excluding the templates,
+# which are output for the USER's project, and agents/, which run with their own
+# context and never receive the Constitution.
+n=$(grep -rl "PREFERENTIAL" "$ROOT/skills" --include=*.md | grep -v '/templates/' | wc -l)
+[ "$n" -eq 1 ] && ok "doctrine: admission rule defined once in skills/" \
+               || ko "doctrine: admission rule defined once in skills/" "$n files"
+n=$(grep -rl "Where does each thing go" "$ROOT" --include=*.md | wc -l)
+[ "$n" -eq 1 ] && ok "doctrine: decision tree lives in one file" \
+               || ko "doctrine: decision tree lives in one file" "$n files"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
