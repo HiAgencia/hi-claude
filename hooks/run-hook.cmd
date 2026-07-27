@@ -30,7 +30,8 @@ if %ERRORLEVEL% equ 0 (
     exit /b %ERRORLEVEL%
 )
 
-REM No bash found: degrade silently (plugin works without injection).
+REM No bash found: warn once on stderr, but never break the session.
+echo hi-claude: bash not found - the method is NOT being injected. Install Git for Windows: https://git-scm.com/download/win >&2
 exit /b 0
 CMDBLOCK
 
