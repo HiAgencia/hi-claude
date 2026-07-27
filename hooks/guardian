@@ -1,36 +1,57 @@
 #!/usr/bin/env bash
-# PreToolUse guard for hi-claude: any Write/Edit targeting a governed file
-# (CLAUDE.md, CLAUDE.local.md, MEMORY.md, or persistent-memory files) returns
-# permissionDecision "ask" so the user always confirms. Everything else
-# passes through untouched (empty output, exit 0).
-set -euo pipefail
+# PreToolUse guard for hi-claude.
+#   1. A subagent trying to WRITE anything -> deny (it investigates, it does not implement).
+#   2. Anyone writing a governed file (CLAUDE.md / persistent memory) -> ask.
+# Everything else passes through untouched (empty output, exit 0).
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "${SCRIPT_DIR}/json-lib"
 
 input=$(cat)
 
-# Extract tool_input.file_path from the hook JSON without jq.
-# First occurrence wins: tool_input serializes file_path before content,
-# so a "file_path" string embedded in the content cannot shadow the real one.
-file_path=$(printf '%s' "$input" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*:[[:space:]]*"\(.*\)"/\1/')
+tool=$(json_str "$input" tool_name)
+agent_id=$(json_str "$input" agent_id)
+file_path=$(json_str "$input" file_path)
+command=$(json_str "$input" command)
 
-# No file_path in the payload -> not a file write we govern.
-if [ -z "$file_path" ]; then
+# Does this call write anything?
+writes=""
+case "$tool" in
+  Write|Edit|MultiEdit|NotebookEdit) writes="yes" ;;
+  Bash)
+    printf '%s' "$command" \
+      | grep -Eq '>>?[[:space:]]*[^ &|]|\btee\b|\bsed\b[^|]*-i|\bSet-Content\b|\bAdd-Content\b|\bOut-File\b|\btruncate\b' \
+      && writes="yes"
+    ;;
+esac
+
+# 1. Subagents investigate; they do not implement.
+# agent_id is present only when the hook fires inside a subagent call
+# (measured on Claude Code 2.1.220 — see the internal repo's agent-id probe).
+if [ -n "$agent_id" ] && [ -n "$writes" ] && [ "${HI_CLAUDE_SUBAGENT_WRITES:-0}" != "1" ]; then
+  emit_decision deny "hi-claude: a subagent investigates, it does not implement. What it brings is a hypothesis - the main agent verifies it first-hand and makes the change. Set HI_CLAUDE_SUBAGENT_WRITES=1 to allow."
   exit 0
 fi
 
+# 2. Governed files. Only when the call actually writes.
+[ -n "$writes" ] || exit 0
+
+target="$file_path"
+[ -z "$target" ] && target="$command"
+[ -z "$target" ] && exit 0
+
 # Normalize: JSON doubles backslashes; unify separators, collapse dupes, lowercase.
-normalized=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
-base="${normalized##*/}"
+normalized=$(printf '%s' "$target" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
 
 governed=""
-case "$base" in
-  claude.md|claude.local.md|memory.md) governed="yes" ;;
-esac
 case "$normalized" in
-  *.claude/projects/*/memory/*.md) governed="yes" ;;
+  *claude.md*|*claude.local.md*|*memory.md*) governed="yes" ;;
+  *.claude/projects/*/memory/*.md*)          governed="yes" ;;
 esac
 
 if [ -n "$governed" ]; then
-  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "PreToolUse",\n    "permissionDecision": "ask",\n    "permissionDecisionReason": "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."\n  }\n}\n'
+  emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."
 fi
 
 exit 0

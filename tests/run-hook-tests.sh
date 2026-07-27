@@ -81,5 +81,16 @@ check "session-start: no roadmap, no noise" session-start "$f2" notcontains "Ope
 check "session-start: still injects method" session-start "$f2" contains "hi-claude-method"
 rm -rf "$proj2" "$f2"
 
+# --- guardian ---
+check "guardian: subagent write is denied"   guardian "$FIX/subagent-write.json"        contains '"deny"'
+check "guardian: subagent read passes"       guardian "$FIX/subagent-read.json"         empty
+check "guardian: bash append to CLAUDE.md"   guardian "$FIX/bash-append-claude-md.json" contains '"ask"'
+check "guardian: bash read of CLAUDE.md"     guardian "$FIX/bash-read-claude-md.json"   empty
+check "guardian: write to CLAUDE.md"         guardian "$FIX/write-claude-md.json"       contains '"ask"'
+check "guardian: edit memory file"           guardian "$FIX/edit-memory.json"           contains '"ask"'
+check "guardian: normal write passes"        guardian "$FIX/write-normal.json"          empty
+out=$(HI_CLAUDE_SUBAGENT_WRITES=1 bash "$ROOT/hooks/guardian" < "$FIX/subagent-write.json")
+[ -z "$out" ] && ok "guardian: escape hatch works" || ko "guardian: escape hatch works" "$out"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
