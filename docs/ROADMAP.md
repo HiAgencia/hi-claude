@@ -29,12 +29,7 @@ cualquier `description`, `hi-claude-internal/tests/triggering/run-evals.ps1` ≥
 <!-- hi-claude:en-curso -->
 ## 1. EN CURSO — máx 3
 
-### Cerrar el gate de triggering de la v2  `[B]`
-Falta: correr la matriz completa y que la precisión no baje del gate vigente; con el resultado, llenar
-los dos números del README (badge y línea de "Números, no promesas").
-Ya resuelto: las 6 descriptions escritas y ajustadas contra dos corridas medidas; las reglas de
-escritura ya no dependen del triggering (viajan en el hook de `PreToolUse`).
-(Hecho: `run-evals.ps1` completo con `should-not` en 100% y sin `{{EVAL_` en el README.)
+*(vacío)*
 
 <!-- Formato de un ítem:
 ### Título imperativo  [V]
@@ -53,6 +48,13 @@ vara antes que el experimento: qué se compara, contra qué línea base, con qu�
 (Hecho: un reporte en `hi-claude-internal/docs/evals/` con la comparación y su N.)
 
 ## 3. Robustez
+
+### Dar repetición al harness de triggering  `[B]`
+Falta: el harness corre cada query UNA vez, y está medido que la varianza entre corridas supera al
+efecto de editar una description (la misma description exacta dio 3/4 y 0/4). Así sirve como gate de
+precisión, pero no para decidir si un cambio de texto mejoró algo. Necesita `-Repeat N` y reportar
+mediana, no el último resultado.
+(Hecho: `run-evals.ps1 -Ids @('sd-s-01') -Repeat 3` devuelve 3 resultados y su mediana.)
 
 ### Revalidar `agent_id` cuando cambie la versión de Claude Code  `[V]`
 Falta: el `deny` a escrituras de subagentes depende de que `PreToolUse` reciba `agent_id`. Si una
