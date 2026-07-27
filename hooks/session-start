@@ -26,7 +26,14 @@ ${constitution}
 roadmap="${cwd}/docs/ROADMAP.md"
 if [ -f "$roadmap" ]; then
   open_work=$(sed -n '/<!-- hi-claude:en-curso -->/,/<!-- \/hi-claude:en-curso -->/p' "$roadmap" | sed '1d;$d')
-  if [ -n "$(printf '%s' "$open_work" | tr -d '[:space:]')" ]; then
+  # Decide on real content only: an untouched template carries a heading, an
+  # empty-marker and a format comment, and injecting that every session is noise.
+  substance=$(printf '%s\n' "$open_work" \
+    | sed '/<!--/,/-->/d' \
+    | grep -v '^[[:space:]]*#' \
+    | grep -v '^[[:space:]]*\*(.*)\*[[:space:]]*$' \
+    | tr -d '[:space:]')
+  if [ -n "$substance" ]; then
     if [ "${#open_work}" -gt "$MAX_ROADMAP_CHARS" ]; then
       open_work="${open_work:0:$MAX_ROADMAP_CHARS}
 [truncated — open docs/ROADMAP.md for the rest]"

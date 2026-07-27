@@ -108,5 +108,25 @@ n=$(grep -rl "Where does each thing go" "$ROOT" --include=*.md | wc -l)
 [ "$n" -eq 1 ] && ok "doctrine: decision tree lives in one file" \
                || ko "doctrine: decision tree lives in one file" "$n files"
 
+# --- templates carry the markers session-start looks for ---
+for t in es/ROADMAP.template.md en/ROADMAP.template.md; do
+  f="$ROOT/skills/setup/templates/$t"
+  if [ -f "$f" ] && grep -qF '<!-- hi-claude:en-curso -->' "$f" && grep -qF '<!-- /hi-claude:en-curso -->' "$f"; then
+    ok "template markers: $t"
+  else
+    ko "template markers: $t" "missing file or markers"
+  fi
+done
+
+# --- a freshly generated ROADMAP injects nothing (end to end, real template) ---
+for lang in es en; do
+  proj=$(mktemp -d); mkdir -p "$proj/docs"
+  sed 's/{{PROJECT_NAME}}/Demo/;s/{{SESSION_DONE_CRITERION}}/pytest -q/' \
+    "$ROOT/skills/setup/templates/$lang/ROADMAP.template.md" > "$proj/docs/ROADMAP.md"
+  f=$(fixture_with_cwd session-start.json "$proj")
+  check "fresh ROADMAP ($lang): no open-work noise" session-start "$f" notcontains "## Open work (docs/ROADMAP.md)"
+  rm -rf "$proj" "$f"
+done
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
