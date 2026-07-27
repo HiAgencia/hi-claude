@@ -47,11 +47,21 @@ target="$file_path"
 # Normalize: JSON doubles backslashes; unify separators, collapse dupes, lowercase.
 normalized=$(printf '%s' "$target" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
 
+# Key order inside tool_input is model-controlled, so a governed path could in principle
+# sit in a later occurrence than the one json_str returns. Missing an "ask" is the costly
+# error; an extra one is not. Test EVERY occurrence in the payload, not just the first.
+all_paths=$(printf '%s' "$input" \
+  | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' \
+  | sed 's/.*:[[:space:]]*"\(.*\)"/\1/' \
+  | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
+
 governed=""
-case "$normalized" in
-  *claude.md*|*claude.local.md*|*memory.md*) governed="yes" ;;
-  *.claude/projects/*/memory/*.md*)          governed="yes" ;;
-esac
+for candidate in $normalized $all_paths; do
+  case "$candidate" in
+    *claude.md*|*claude.local.md*|*memory.md*) governed="yes" ;;
+    *.claude/projects/*/memory/*.md*)          governed="yes" ;;
+  esac
+done
 
 if [ -n "$governed" ]; then
   emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."

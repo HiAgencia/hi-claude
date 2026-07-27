@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"content":"example payload with \"file_path\": \"decoy.txt\" inside it","file_path":"C:\\Users\\Ten\\Desktop\\proj\\CLAUDE.md"}}

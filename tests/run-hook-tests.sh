@@ -124,6 +124,9 @@ check "guardian: markdown write gets the rules" guardian "$FIX/write-markdown-do
 check "guardian: markdown nudge is not a decision" guardian "$FIX/write-markdown-doc.json" notcontains "permissionDecision"
 check "guardian: code write gets no nudge"      guardian "$FIX/write-normal.json"       empty
 check "guardian: CLAUDE.md still asks, not nudges" guardian "$FIX/write-claude-md.json" notcontains "TIMELESS"
+# Key order inside tool_input is model-controlled: a decoy file_path in the content
+# must not shadow the real governed target.
+check "guardian: decoy file_path cannot shadow" guardian "$FIX/write-shadowed-file-path.json" contains '"ask"'
 
 # --- subagent-start / pre-compact ---
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
