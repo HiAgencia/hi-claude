@@ -1,6 +1,6 @@
 ---
 name: seeding-doubts
-description: Use whenever quality stalls, something feels off without a clear cause, the user says it cannot be done, or a big block of work just closed (inverse pre-mortem) — even when they only ask you to look again. Triggers on "algo anda mal y no sé qué", "no se puede", "estamos estancados", "qué se nos está escapando", "revisá todo de nuevo", "we're stuck", "what are we missing", "something's off", "nothing is improving", "take another look". Produces MORE doubts to measure, never conclusions — a plain list of pending work is hi-claude:roadmap instead.
+description: Use whenever quality stalls, something feels off without a clear cause, the user says it cannot be done, or a big block of work just closed (inverse pre-mortem) — even when they only ask you to look again. Triggers on "algo anda mal y no sé qué", "no se puede", "estamos estancados", "qué se nos está escapando", "revisá todo de nuevo", "we're stuck", "what are we missing", "something's off", "nothing is improving", "take another look". Produces MORE doubts to measure, never conclusions, under the hi-claude method.
 ---
 
 # Seeding doubts (hi-claude)

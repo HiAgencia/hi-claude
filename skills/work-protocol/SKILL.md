@@ -1,6 +1,6 @@
 ---
 name: work-protocol
-description: Use BEFORE writing or updating documentation, a README, a code comment or a commit message, and whenever a doc might contradict the current code. Also use when closing a problem, to leave the system easier to operate instead of covering the symptom. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "documentá en el README", "write it down", "update the docs", "document what you changed", "is this doc stale", "why is this so hard to debug".
+description: Use BEFORE writing or updating any documentation, README, code comment or commit message — this project BANS specific patterns in written work (dated state, verdicts written as final, docs that turn into a chronicle) and the ban list lives here, so writing without it produces text that has to be redone. Also use whenever a doc or comment might contradict the current code, and when closing a problem, to leave the system easier to operate instead of just covering the symptom. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "write it down", "update the docs", "document what you changed", "is this doc stale", "why is this so hard to debug".
 ---
 
 # Work protocol (hi-claude)
