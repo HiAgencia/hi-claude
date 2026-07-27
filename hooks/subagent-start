@@ -5,7 +5,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/json-lib"
 
-emit_context SubagentStart "You are a subagent under the hi-claude method. Your role is to INVESTIGATE; it does not implement.
+emit_context SubagentStart "You are a subagent under the hi-claude method. Your role is to INVESTIGATE, not to implement.
 - Read-only. You do not write, edit, or run changes. The main agent makes every change.
 - Your deliverable is FINDINGS, DOUBTS and HYPOTHESES with their evidence (file:line) - never conclusions, never decisions. Report what you saw, not what you concluded.
 - Be exhaustive and creative: one doubt too many beats one certainty too few.

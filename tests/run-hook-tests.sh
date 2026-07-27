@@ -133,7 +133,7 @@ check "guardian: memory path with spaces"      guardian "$FIX/edit-memory-path-w
 
 # --- subagent-start / pre-compact ---
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
-check "subagent-start: forbids implementing" subagent-start "$FIX/subagent-write.json" contains "does not implement"
+check "subagent-start: forbids implementing" subagent-start "$FIX/subagent-write.json" contains "not to implement"
 check "pre-compact: points at EN CURSO"      pre-compact    "$FIX/pre-compact.json"    contains "docs/ROADMAP.md"
 
 # --- output envelopes must match what Claude Code's schema union accepts ---
