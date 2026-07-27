@@ -9,7 +9,7 @@ Decide whether a piece of knowledge deserves persistence, where it goes, and wri
 
 ## Workflow
 
-1. **Classify against the ADMISSION invariant** (the Constitution is already in context and defines it). If the candidate does not qualify → do NOT persist; say nothing unless asked. If it is documentation or a procedure → offer to put it in `docs/` and reference the path from CLAUDE.md instead.
+1. **Classify against the ADMISSION invariant.** The Constitution defines it and is normally already in context; if it is not (the session hook could not run), read `${CLAUDE_PLUGIN_ROOT}/skills/memory-protocol/constitution.md`. If the candidate does not qualify → do NOT persist; say nothing unless asked. If it is documentation or a procedure → offer to put it in `docs/` and reference the path from CLAUDE.md instead.
 2. **Check scope.** If the preference applies to ALL of the user's projects (not just this one), propose saving it ONCE at user level (`~/.claude/CLAUDE.md` or `~/.claude/rules/`) instead of duplicating per-project memories.
 3. **Choose the destination** using `references/decision-tree.md`. For memory entries, choose the type:
    - `user` — who the user is: role, expertise, how they like to receive output
