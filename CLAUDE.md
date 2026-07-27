@@ -15,14 +15,16 @@ Claude Code plugin packaging the hi-claude working method: governed memory, a cu
 - Only TIMELESS, PREFERENTIAL, or LIMITING knowledge enters this file or memory — paths included: only timeless docs earn a reference here. Open work goes to `docs/ROADMAP.md`.
 - ALWAYS consult before saving/modifying/deleting in memory or this file.
 - Documentation does NOT live here: `docs/` with `docs/INDEX.md` as the entry point; this file only references paths.
-- A subagent INVESTIGATES; it does not implement. What it brings is a hypothesis until verified first-hand.
 - Clean root; everything in its folder.
 
 ## Project structure
 
 ```
 .claude-plugin/   manifests (plugin.json + marketplace.json)
-hooks/            hooks.json + run-hook.cmd (polyglot) + json-lib + one script per event
+.gitattributes    pins hooks/** -text — load-bearing, see Gotchas
+LICENSE           MIT, Hi Agencia
+hooks/            hooks.json + run-hook.cmd (polyglot) + json-lib + one script per event,
+                  named by role where the event has none: PreToolUse is `guardian`
 skills/           memory-protocol (+ constitution, references), roadmap (+ references),
                   work-protocol, seeding-doubts, setup (+ templates es/en), audit
 agents/           read-only auditors (CLAUDE.md, memory, organization, ROADMAP)
@@ -54,6 +56,7 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 | skill: setup | Bootstrapping CLAUDE.md / docs / ROADMAP from the es/en templates |
 | skill: audit (+ its auditor agents) | Health check of CLAUDE.md, memory, ROADMAP and organization; run before each release |
 | `bash tests/run-hook-tests.sh` | After ANY change to a hook, a template marker, or the doctrine |
+| `plugin-dev` (agent `plugin-validator`) | After changing manifests, hooks or skill structure — part of the session-done gate in `docs/ROADMAP.md` §0 |
 | `hi-claude-internal/tests/triggering/run-evals.ps1` | MAINTAINERS ONLY (private repo) — after ANY change to a skill description; gate before shipping |
 | context7 (MCP) | Current Claude Code plugin/skill/hook API docs before editing manifests or hook scripts |
 

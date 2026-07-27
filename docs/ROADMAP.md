@@ -41,7 +41,7 @@ Ya resuelto: una línea, re-escrita, nunca apilada.
 
 ## 2. Método y eficacia
 
-### Medir si el método MEJORA el resultado, no solo si dispara `[B]`
+### Medir si el método MEJORA el resultado, no solo si las descriptions disparan  `[B]`
 Falta: el harness mide triggering de descriptions; nada mide si trabajar bajo el método produce mejor
 trabajo. Para un plugin de memoria alcanzaba; para uno de metodología es el hueco de fondo. Diseñar la
 vara antes que el experimento: qué se compara, contra qué línea base, con qué N.
@@ -61,4 +61,6 @@ Falta: el `deny` a escrituras de subagentes depende de que `PreToolUse` reciba `
 versión deja de mandarlo, el bloqueo deja de aplicarse EN SILENCIO — no falla ruidosamente.
 Ya resuelto: medido y documentado en la sonda de `agent_id` del taller privado
 sobre Claude Code 2.1.220, con el método de la sonda listo para re-correr.
-(Hecho: la sonda re-corrida devuelve al menos un `PreToolUse` con `agent_id` en la versión vigente.)
+(Hecho: re-correr la sonda de `agent_id` del taller privado —hook temporal en `PreToolUse` que vuelca
+el payload, más una sesión headless que dispare un subagente que escriba— devuelve al menos una línea
+con `agent_id` en la versión vigente.)

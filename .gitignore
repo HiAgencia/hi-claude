@@ -4,9 +4,12 @@ Thumbs.db
 *.swp
 
 # Local-only Claude config
-.claude/settings.local.json
+.claude/
 CLAUDE.local.md
 
-# Logs and temp
+# Logs, temp and tool dumps
 *.log
+*.tmp
 tmp/
+node_modules/
+.playwright-mcp/
