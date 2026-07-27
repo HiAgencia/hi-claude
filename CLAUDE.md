@@ -57,6 +57,6 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 ## Key rules
 
 - Design docs, plans, and eval methodology live in the PRIVATE repo `HiAgencia/hi-claude-internal` (full dev history archived there). Never commit them here.
-- All plugin content in English; user-facing output adapts to the user's language at runtime; templates exist in `es/` and `en/`.
+- The shipped instruction surface (`skills/`, `agents/`, `hooks/`) is written in English; `docs/` is written in the maintainers' language, and user-facing output adapts to the user's language at runtime. Templates exist in `es/` and `en/`.
 - Memory format reference: `skills/memory-protocol/references/memory-schema.md` is the single source of truth — native format changes are updated THERE only.
 - License: MIT, copyright Hi Agencia.

@@ -1,6 +1,6 @@
 ---
 name: seeding-doubts
-description: Creative validation protocol for when quality stalls, when something feels off without a clear cause, or right after closing a big block of work (inverse pre-mortem). Use on "algo anda mal y no sé qué", "no se puede", "estamos estancados", "qué se nos está escapando", "revisá todo de nuevo", "something's off", "we're stuck", "what are we missing", "why isn't this getting better". Produces MORE doubts to measure, never conclusions.
+description: Use whenever quality stalls, something feels off without a clear cause, the user says it cannot be done, or a big block of work just closed (inverse pre-mortem) — even when they only ask you to look again. Triggers on "algo anda mal y no sé qué", "no se puede", "estamos estancados", "qué se nos está escapando", "revisá todo de nuevo", "we're stuck", "what are we missing", "something's off", "nothing is improving", "take another look". Produces MORE doubts to measure, never conclusions, under the hi-claude method.
 ---
 
 # Seeding doubts (hi-claude)

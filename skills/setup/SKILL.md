@@ -48,8 +48,8 @@ filled:
   derived form anyway — the directory appears with the first saved memory.
 - `{{KEY_DOCS}}` — TIMELESS key documents only (research, trackers, manuals), one line each:
   `- **Descriptive title**: \`path\``. In a fresh project write the "nothing yet" placeholder. Plans
-  and status docs never go here; when unsure, consult `references/decision-tree.md` in the
-  memory-protocol skill.
+  and status docs never go here; when unsure, consult
+  `${CLAUDE_PLUGIN_ROOT}/skills/memory-protocol/references/decision-tree.md`.
 - `{{FOLDER_TREE}}` — the structure for this kind of work; always includes `docs/`
 - `{{TOOLS_TABLE}}` — only the tools the user selected
 - `{{USER_RULES}}` — the limits, verbatim, marked non-negotiable

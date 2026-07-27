@@ -26,7 +26,7 @@ progresivamente.
 | `SessionStart` (`startup·resume·clear·compact·fork`) | Inyecta la Constitución y, si el proyecto tiene uno, el bloque de trabajo abierto de `docs/ROADMAP.md`. Solo inyecta contenido REAL: un ROADMAP recién generado no produce ruido |
 | `SubagentStart` | Inyecta el rol dentro del subagente: investiga, no implementa; su entregable son hipótesis |
 | `PreCompact` | Pide volcar lo que quedó a medio hacer antes de comprimir el contexto |
-| `PreToolUse` (`Write·Edit·MultiEdit·NotebookEdit·Bash`) | `deny` si un subagente escribe (escape: `HI_CLAUDE_SUBAGENT_WRITES=1`) · `ask` si la escritura toca CLAUDE.md o la memoria, incluida la vía Bash |
+| `PreToolUse` (`Write·Edit·MultiEdit·NotebookEdit·Bash`) | `deny` si un subagente escribe (escape: `HI_CLAUDE_SUBAGENT_WRITES=1`) · `ask` si la escritura toca CLAUDE.md o la memoria, incluida la vía Bash · en toda escritura de markdown, las reglas de escritura en una línea, porque como description sola nunca disparaban |
 
 **Seis skills**: `memory-protocol` (+ Constitución y references), `roadmap`, `work-protocol`,
 `seeding-doubts`, `setup` (+ plantillas `es`/`en`), `audit`.

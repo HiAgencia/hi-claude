@@ -13,6 +13,25 @@ ko()  { printf 'FAIL  %s\n      got: %s\n' "$1" "$(printf '%s' "$2" | head -c 30
 # run_hook <hook> <fixture-file> -> stdout of the hook
 run_hook() { bash "$ROOT/hooks/$1" < "$2" 2>/dev/null || true; }
 
+# envelope <name> <hook> <fixture-file> json|plain [expected hookEventName]
+#   Claude Code validates hook stdout against a schema union. An event that is NOT
+#   in that union must print PLAIN text; printing JSON makes the hook fail validation
+#   and its output is dropped silently. Substring assertions cannot see that class of
+#   bug: the text is right, the envelope is wrong. This checks the envelope.
+envelope() {
+  local name="$1" hook="$2" fixture="$3" kind="$4" event="${5:-}" out
+  out=$(run_hook "$hook" "$fixture")
+  case "$kind" in
+    plain)
+      case "$out" in
+        "{"*) ko "$name" "$out" ;;
+        *)    ok "$name" ;;
+      esac ;;
+    json)
+      if printf '%s' "$out" | grep -qF "\"hookEventName\": \"$event\""; then ok "$name"; else ko "$name" "$out"; fi ;;
+  esac
+}
+
 # check <name> <hook> <fixture-file> <mode> [pattern]
 #   modes: contains | notcontains | empty
 check() {
@@ -104,6 +123,14 @@ check "guardian: CLAUDE.md still asks, not nudges" guardian "$FIX/write-claude-m
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
 check "subagent-start: forbids implementing" subagent-start "$FIX/subagent-write.json" contains "does not implement"
 check "pre-compact: points at EN CURSO"      pre-compact    "$FIX/pre-compact.json"    contains "docs/ROADMAP.md"
+
+# --- output envelopes must match what Claude Code's schema union accepts ---
+proj=$(make_project); f=$(fixture_with_cwd session-start.json "$proj")
+envelope "envelope: session-start is JSON SessionStart"   session-start  "$f"                      json  SessionStart
+rm -rf "$proj" "$f"
+envelope "envelope: subagent-start is JSON SubagentStart" subagent-start "$FIX/subagent-write.json" json  SubagentStart
+envelope "envelope: guardian is JSON PreToolUse"          guardian       "$FIX/write-claude-md.json" json PreToolUse
+envelope "envelope: pre-compact is PLAIN (not in union)"  pre-compact    "$FIX/pre-compact.json"    plain
 
 # --- doctrine: one rule, one file ---
 # Scope: the instruction surface Claude loads (skills/), excluding the templates,

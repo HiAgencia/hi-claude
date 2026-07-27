@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # PreCompact hook for hi-claude: the last chance to persist the thread before
 # the context is squashed. Never blocks.
+#
+# CONTRACT: plain text on stdout, NOT a hookSpecificOutput envelope. PreCompact is
+# not a member of Claude Code's hookSpecificOutput union (verified against the
+# 2.1.220 binary: every other event we use has a `v.literal("<Event>")`, PreCompact
+# has none). A JSON envelope here fails schema validation, the hook is marked failed,
+# and its text is filtered out of the compactor's instructions WITHOUT any error the
+# user would notice. Plain stdout becomes `newCustomInstructions` verbatim.
 set -uo pipefail
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-. "${SCRIPT_DIR}/json-lib"
 
-emit_context PreCompact "Before compacting: bring docs/ROADMAP.md up to date. In the block between the hi-claude:en-curso markers, leave every open piece of work with one line for what is missing and one line for what is already resolved. After compaction that section is the only thing left of this thread. No dates, and do not turn it into a log."
+printf '%s\n' "Before compacting: bring docs/ROADMAP.md up to date. In the block between the hi-claude:en-curso markers, leave every open piece of work with one line for what is missing and one line for what is already resolved. After compaction that section is the only thing left of this thread. No dates, and do not turn it into a log."
 exit 0
