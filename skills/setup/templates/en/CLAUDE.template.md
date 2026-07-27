@@ -3,13 +3,20 @@
 
 {{PROJECT_DESCRIPTION}}
 
+## Start here
+
+1. **`docs/ROADMAP.md`** — what is missing. Its open-work block says what was in progress.
+2. **`docs/STATE.md`** — what already exists, live picture.
+3. **`docs/INDEX.md`** — everything else: read the title, open only what you need.
+
 ## How to work here — the hi-claude method
 
 This project is governed by the **hi-claude** plugin (installed and active): it injects this method into every session and guards all writes to this file and to persistent memory. Audits: `/hi-claude:audit`.
 
-- Only **TIMELESS, PREFERENTIAL, or LIMITING** knowledge enters this file or persistent memory. No state, progress, or dated pendings.
+- Only **TIMELESS, PREFERENTIAL, or LIMITING** knowledge enters this file or persistent memory. Open work goes to `docs/ROADMAP.md`.
 - **ALWAYS consult the user before** saving, modifying, or deleting in memory or in this file.
 - Documentation does **NOT live here**: it goes to `docs/` (indexed in `docs/INDEX.md`); this file only references paths.
+- A subagent INVESTIGATES; it does not implement. What it brings is a hypothesis until verified first-hand.
 - Clean root: nothing temporary, experimental, or stale lying around. Everything in its folder.
 
 ## This project's persistent memory
@@ -26,6 +33,13 @@ This project is governed by the **hi-claude** plugin (installed and active): it 
 ```
 
 <!-- Keep this tree current. The organization auditor compares the real structure against this declaration. -->
+
+## Gotchas — what the tree does NOT say
+
+<!-- The tokens that pay off: what bites and cannot be deduced by looking at the repo.
+     Nothing that is visible by listing files or reading a module name. -->
+
+*(nothing yet — added when the first one bites)*
 
 ## Documentation
 
@@ -52,5 +66,6 @@ Key documents (timeless only — descriptive title + path):
 
 - Use the tools in the table without being asked, whenever they apply.
 - Consult persistent memory even when you think you remember the preferences.
+- Keep `docs/ROADMAP.md` current as you work — that is what survives a compaction.
 - When the user corrects, confirms an approach, or states a preference → propose saving it (hi-claude protocol).
 - After large changes, you may suggest `/hi-claude:audit`.

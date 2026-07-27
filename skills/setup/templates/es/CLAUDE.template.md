@@ -3,13 +3,20 @@
 
 {{PROJECT_DESCRIPTION}}
 
+## Arrancá por acá
+
+1. **`docs/ROADMAP.md`** — lo que falta. Su bloque de trabajo abierto dice en qué se estaba trabajando.
+2. **`docs/ESTADO.md`** — lo que ya hay, foto viva.
+3. **`docs/INDEX.md`** — todo lo demás: leé el título, abrí solo lo que haga falta.
+
 ## Cómo trabajar acá — método hi-claude
 
 Este proyecto se rige por el plugin **hi-claude** (instalado y activo): él inyecta este método en cada sesión y custodia las escrituras a este archivo y a la memoria. Auditorías: `/hi-claude:audit`.
 
-- A este archivo y a la memoria solo entra lo **ATEMPORAL, PREFERENCIAL o LIMITANTE**. Nada de estado, avances ni pendientes con fecha.
+- A este archivo y a la memoria solo entra lo **ATEMPORAL, PREFERENCIAL o LIMITANTE**. El trabajo abierto va a `docs/ROADMAP.md`.
 - **Consultar SIEMPRE antes** de guardar, modificar o borrar en memoria o en este archivo.
 - La documentación **NO vive acá**: va a `docs/` (indexada en `docs/INDEX.md`) y acá solo se referencia el path.
+- Un subagente INVESTIGA; no implementa. Lo que trae es hipótesis hasta verificarlo de primera mano.
 - Root limpio: nada temporal, de prueba ni obsoleto suelto. Cada cosa en su carpeta.
 
 ## Memoria persistente de este proyecto
@@ -26,6 +33,13 @@ Este proyecto se rige por el plugin **hi-claude** (instalado y activo): él inye
 ```
 
 <!-- Mantené este árbol al día. El auditor de organización compara la estructura real contra esta declaración. -->
+
+## Gotchas — lo que el árbol NO dice
+
+<!-- Acá van los tokens que valen: lo que muerde y no se deduce mirando el repo.
+     Nada de lo que se ve solo con listar archivos o leer un nombre de módulo. -->
+
+*(todavía no hay — se agregan cuando aparezca el primer mordisco)*
 
 ## Documentación
 
@@ -52,5 +66,6 @@ Documentos clave (solo atemporales — título descriptivo + path):
 
 - Usá las herramientas de la tabla sin que te lo pidan, cuando correspondan.
 - Consultá la memoria persistente aunque creas recordar las preferencias.
+- Mantené `docs/ROADMAP.md` al día mientras trabajás — es lo que sobrevive a una compactación.
 - Si el usuario corrige, confirma un enfoque o declara una preferencia → proponé guardarla (protocolo hi-claude).
 - Tras cambios grandes, podés sugerir `/hi-claude:audit`.
