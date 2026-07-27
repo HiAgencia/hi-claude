@@ -9,10 +9,10 @@
   "plugins": [
     {
       "name": "hi-claude",
-      "description": "Governed memory, curated CLAUDE.md, clean project structure, and audits — best practices from day 1, for technical and non-technical users alike.",
+      "description": "A working method for Claude Code: governed memory, a curated CLAUDE.md, a register of open work that survives compaction, and subagents that investigate instead of implementing — for technical and non-technical users alike.",
       "source": "./",
       "category": "productivity",
-      "tags": ["memory", "claude-md", "best-practices", "organization", "onboarding", "espanol"]
+      "tags": ["method", "memory", "roadmap", "claude-md", "subagents", "best-practices", "organization", "onboarding", "espanol"]
     }
   ]
 }

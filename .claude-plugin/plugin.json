@@ -1,13 +1,13 @@
 {
   "name": "hi-claude",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "license": "MIT",
-  "description": "The first thing you should say to Claude in every new project: governed persistent memory, a curated CLAUDE.md, clean project structure, and continuous audits.",
+  "description": "A working method for Claude Code: governed memory, a curated CLAUDE.md, a register of open work that survives compaction, subagents that investigate instead of implementing, and continuous audits.",
   "author": {
     "name": "Hi Agencia",
     "url": "https://github.com/HiAgencia"
   },
   "homepage": "https://github.com/HiAgencia/hi-claude",
   "repository": "https://github.com/HiAgencia/hi-claude",
-  "keywords": ["memory", "claude-md", "best-practices", "organization", "onboarding", "method"]
+  "keywords": ["method", "memory", "roadmap", "claude-md", "subagents", "best-practices", "organization", "onboarding"]
 }
