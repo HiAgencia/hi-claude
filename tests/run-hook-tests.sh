@@ -92,5 +92,10 @@ check "guardian: normal write passes"        guardian "$FIX/write-normal.json"  
 out=$(HI_CLAUDE_SUBAGENT_WRITES=1 bash "$ROOT/hooks/guardian" < "$FIX/subagent-write.json")
 [ -z "$out" ] && ok "guardian: escape hatch works" || ko "guardian: escape hatch works" "$out"
 
+# --- subagent-start / pre-compact ---
+check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
+check "subagent-start: forbids implementing" subagent-start "$FIX/subagent-write.json" contains "does not implement"
+check "pre-compact: points at EN CURSO"      pre-compact    "$FIX/pre-compact.json"    contains "docs/ROADMAP.md"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
