@@ -5,8 +5,7 @@
 > histórico**: nada de "antes/ahora", nada de crónicas.
 >
 > **Los números vivos no se copian acá**: la versión sale de `.claude-plugin/plugin.json`, los
-> resultados de evals de `hi-claude-internal/docs/evals/`, y qué está publicado del `git log` de
-> `origin/main`.
+> resultados de evals del taller privado, y qué está publicado del `git log` de `origin/main`.
 >
 > Lo que FALTA vive en `ROADMAP.md`.
 

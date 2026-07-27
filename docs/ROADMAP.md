@@ -21,7 +21,7 @@
 
 **Criterio de sesión cerrada** — corrible, se corre antes de declarar nada:
 `bash tests/run-hook-tests.sh` verde · `plugin-dev:plugin-validator` sin críticos · si se tocó
-cualquier `description`, `hi-claude-internal/tests/triggering/run-evals.ps1` ≥ el gate vigente.
+cualquier `description`, `run-evals.ps1` del taller privado ≥ el gate vigente.
 
 **Decisiones que frenan** — necesitan GO antes de avanzar:
 *(todavía no hay)*
@@ -45,7 +45,7 @@ Ya resuelto: una línea, re-escrita, nunca apilada.
 Falta: el harness mide triggering de descriptions; nada mide si trabajar bajo el método produce mejor
 trabajo. Para un plugin de memoria alcanzaba; para uno de metodología es el hueco de fondo. Diseñar la
 vara antes que el experimento: qué se compara, contra qué línea base, con qué N.
-(Hecho: un reporte en `hi-claude-internal/docs/evals/` con la comparación y su N.)
+(Hecho: un reporte de evals en el taller privado con la comparación y su N.)
 
 ## 3. Robustez
 
@@ -59,6 +59,6 @@ mediana, no el último resultado.
 ### Revalidar `agent_id` cuando cambie la versión de Claude Code  `[V]`
 Falta: el `deny` a escrituras de subagentes depende de que `PreToolUse` reciba `agent_id`. Si una
 versión deja de mandarlo, el bloqueo deja de aplicarse EN SILENCIO — no falla ruidosamente.
-Ya resuelto: medido y documentado en `hi-claude-internal/docs/evals/2026-07-26-agent-id-probe.md`
+Ya resuelto: medido y documentado en la sonda de `agent_id` del taller privado
 sobre Claude Code 2.1.220, con el método de la sonda listo para re-correr.
 (Hecho: la sonda re-corrida devuelve al menos un `PreToolUse` con `agent_id` en la versión vigente.)
