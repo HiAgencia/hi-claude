@@ -7,10 +7,15 @@ description: Use BEFORE writing or updating any documentation, README, code comm
 
 ## How it gets WRITTEN
 
-- Never bias, limit, condition, judge, or write as a FINAL. No "it doesn't work", "ceiling",
-  "impossible", "definitive", "there's no signal". A closed verdict costs every future session the
-  attempt.
-- Never write the TEMPORAL: no "today", "this session", "for now". Timeless, or unwritten.
+This skill carries the WRITING axis of the method. The principles themselves are defined in the
+Constitution, which every session already carries — here is how a violation is spotted in a draft.
+
+| Spotted in a draft | Rewrite it as |
+|---|---|
+| a door closed on a future session — any of the shapes the Constitution forbids | the state OBSERVED, plus the condition that would reopen it |
+| a cause or an intent asserted without evidence, or a grade where a measurement belongs | the fact and its evidence, no verdict of value |
+| something that expires — a date, a state, a moment | the invariant behind it, or it goes unwritten |
+
 - A measured result is a DATUM with its N and its method, REOPENABLE — never a closed verdict. What
   was measured and not adopted is recorded with the evidence that closed it, and with the condition
   that would reopen it.
@@ -41,6 +46,27 @@ and its improvement enters the ROADMAP. Register the idea even when it is not im
 cheaper the system is to read, the more effective every session becomes.
 
 ## Retroactivity — what you touch, you leave true
+
+### Verify by EFFECT before correcting anything
+
+A text is corrected against what is TRUE NOW, never against another text. When two writings
+contradict each other the newer one does not win — the one the measurement contradicts loses.
+
+Drift runs both ways, and both cost the same: written as PENDING what already happened (a flip, a
+deploy, a fix), and written as DONE what went stale (a flag that changed, a script that is gone).
+
+What "measure" means is DISCOVERED per project, never assumed:
+
+| To check | Read the effect, not the declaration |
+|---|---|
+| a test suite | the runner the project actually declares — `package.json` scripts, Makefile, `pyproject`, cargo, go. If none is declared, SAY SO and carry on: never invent a command, never skip the step in silence |
+| a gate before shipping | whatever gate the project DECLARES: a script, a hook, a CI job, a risk window. None declared, no gate |
+| a live environment | the env inside the container, the endpoint answering, the rows in the table, the workflow actually enabled — not the panel that describes them. No live environment: declare the step skipped, do not simulate it |
+| a published number | re-run the script AS COMMITTED. Evidence that no longer reproduces is declared as debt, never left silent |
+| the register of open work | whatever the project uses. `docs/ROADMAP.md` under this method; elsewhere a TODO, a backlog, issues. None found: say there is no register |
+
+The correction that costs the most is the one THIS session left stale minutes after writing it. Sweep
+what this session touched first, then the files that load every time.
 
 - A doc or comment that contradicts the current code gets corrected as you pass by.
 - A line describing something MANUAL, TEMPORARY, or verified ON A DATE is not written as a definitive

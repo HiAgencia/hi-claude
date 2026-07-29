@@ -1,5 +1,9 @@
 # Where does each thing go?
 
+> Two questions, not one. This table answers **where** something goes once it passed the ADMISSION
+> axis. **How** it gets written is the WRITING axis — OBJECTIVE and NON-CONDITIONING — and it applies
+> to every destination below. Both are defined in the Constitution; they are not repeated here.
+
 | The knowledge is... | Destination | Example |
 |---|---|---|
 | A short rule that applies project-wide, every session | `CLAUDE.md` | "Deploy = two separate commands, never chained" |

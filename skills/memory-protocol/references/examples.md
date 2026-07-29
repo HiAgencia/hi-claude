@@ -1,5 +1,8 @@
 # Examples — bad vs good
 
+> Cases 1-3 and 6 are the ADMISSION axis (does this persist at all). Cases 4, 5, 7 and 8 are the
+> WRITING axis (how it is written once it does). Both are defined in the Constitution.
+
 ## 1. Ephemeral state vs timeless rule
 
 ❌ `project-status.md`: "Today I migrated the scraper; commit pending; deadline June 16."
@@ -29,3 +32,19 @@
 
 ❌ "Always uppercase brand names." (breaks prose everywhere)
 ✅ "Uppercase brand names in N8N node titles. EXPLICIT SCOPE: only N8N workflow JSON, not prose."
+
+## 7. Closed verdict vs reopenable state (NON-CONDITIONING)
+
+❌ `project-no-parallel.md`: "Parallel uploads don't work with this API. Don't try."
+✅ `project-upload-concurrency.md`: "Uploads above 4 concurrent returned HTTP 429 (observed N=3 runs, 2026-05-02). **How to apply:** cap at 4. **Reopens if:** the plan changes or the provider publishes a higher limit."
+
+A memory is the text that outlives the reason it was written. "Don't try" costs every future session
+the attempt; the second form costs nothing and carries the condition that makes it obsolete.
+
+## 8. Attributed cause vs observed fact (OBJECTIVE)
+
+❌ `feedback-bad-scraper.md`: "The scraper is badly built, that's why it fails."
+✅ `project-scraper-timeout.md`: "The scraper returns empty on pages over ~2 MB; the timeout fires before the DOM settles (observed on 4 of 4 large pages). **How to apply:** raise the wait or paginate before scraping."
+
+The first blames and closes. The second describes what happens, under what condition, and leaves the
+next session somewhere to act.

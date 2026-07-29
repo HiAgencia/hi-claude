@@ -1,5 +1,9 @@
 # Memory schema — single source of truth
 
+> **hi-claude governs what persists here.** Only what passes the ADMISSION axis is admitted, and it is
+> written under the WRITING axis — both defined in the Constitution, which every session already
+> carries.
+>
 > Auditors and skills validate against THIS file. If the native format evolves, update here only.
 
 ## Directory layout
@@ -42,6 +46,9 @@ Notes:
 
 ```markdown
 # MEMORY.md — <project name>
+
+> hi-claude governs this memory: only what passes the ADMISSION axis is here, always with the user's
+> approval.
 
 - [Short title](type-slug.md) — one-line hook, max 150 chars
 ```
