@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Claude_Code-%E2%89%A5_2.1.59-d97757?logo=anthropic&logoColor=white" alt="Claude Code">
-  <img src="https://img.shields.io/badge/version-2.0.0-4c8cff" alt="Version">
+  <img src="https://img.shields.io/badge/Claude_Code-%E2%89%A5_2.1.143-d97757?logo=anthropic&logoColor=white" alt="Claude Code">
+  <img src="https://img.shields.io/badge/version-3.0.0-4c8cff" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/false_triggers-zero-2ea44f" alt="Zero false triggers">
   <img src="https://img.shields.io/badge/dependencies-zero-2ea44f" alt="Zero dependencies">
@@ -58,35 +58,40 @@ Restart the session (or run `/reload-plugins`). There is no step 3.
 | **Day 1** | `/hi-claude:setup` interviews you in plain language and generates your CLAUDE.md, your docs index, your ROADMAP and your initial memory. With your approval, always. |
 | **Every day** | The open work stays written down as you go. Claude proposes remembering only what is worth keeping: timeless rules, your preferences, your limits. It never touches memory or CLAUDE.md without asking first. |
 | **When the context compacts** | Claude is told to write down what is half-finished *before* the squash. What comes out the other side still knows where you were. |
-| **Maintenance** | `/hi-claude:audit` grades your CLAUDE.md, your memory, your roadmap and your folder organization from A to F, shows findings with `file:line` evidence, and fixes only what you approve. |
+| **Maintenance** | `/hi-claude:audit` measures your CLAUDE.md, your memory, your roadmap, your folder organization and your inventory, shows findings with `file:line` evidence, and fixes only what you approve. It reports what it counted — never a grade on your own files. |
 
 ## How it works
 
 | Layer | What it guarantees |
 |---|---|
-| **The Constitution** | Three invariants — admission, consultation, trace — present from the first second of every session, including resumed and forked ones. Nothing else is loaded upfront; the rest opens when the task asks for it. |
+| **The Constitution** | Five principles on two axes, the hierarchy that settles conflicts between them, and three invariants — present from the first second of every session, including resumed and forked ones. Nothing else is loaded upfront; the rest opens when the task asks for it. |
 | **The ROADMAP** | One file holds what is missing. Its open-work block is injected at every session start, so *"where did we leave off"* has an answer that survives a compaction, a `--resume`, and a week off. When an item is finished it is **deleted**, not ticked — that is why the file stays short. |
 | **The Guardian** | Nothing gets written to CLAUDE.md or persistent memory without your explicit confirmation. Enforced by code, not by trust — including writes attempted through the shell. |
-| **The subagent's role** | A subagent **investigates; it does not implement.** It is told so on spawn, and a hook denies its write attempts. What it brings back is a hypothesis until the main agent verifies it first-hand. |
+| **The subagent's role** | A subagent **investigates; it never decides what gets done.** It may read, inspect, test and measure — and a hook denies every write to your project through any tool, with no environment-variable escape. What it brings back is a hypothesis until the main agent verifies it first-hand, and every report says so in its own closing line. |
+| **The turn does not end stale** | A turn that changed the system gets stopped once, with the whole loop to close: the register, the live picture, the docs, the inventory, memory, CLAUDE.md. Not a reminder that may or may not fire: a hook. |
+| **The inventory** | Four documents say which skills, MCP servers, plugins and tools this project can use, described in proportion to what it actually uses. Start-up flags it when what is installed stops matching what is written. |
+| **Doubts that arrive on their own** | Close a big block and the inverse pre-mortem comes to you — *what did we not look at?* It offers, never blocks. Finishing well is exactly the moment nothing feels like it needs a skill, which is why it cannot be left to one. |
+| **Long jobs go to the background** | A test run, a build, an install gets flagged at the call, the only moment it can still be changed. A blocked wait costs the whole turn. |
 | **The memory protocol** | Kicks in on its own when you correct something, confirm an approach, or state a preference ("I don't like...", "from now on...", "recordá que..."). It proposes what to remember; you decide. |
-| **Four auditors** | Read-only reviewers for CLAUDE.md, memory, ROADMAP, and organization. Every finding cites its evidence, two findings per category at most, and inventing problems is off the table. Secrets in plain text mean an automatic F. |
+| **Five auditors** | Read-only reviewers for CLAUDE.md, memory, ROADMAP, organization and the inventory. Every finding cites its evidence, two per category at most, and inventing problems is off the table. They report the measurement, never a grade on your files. |
 
-## The admission rule
+## The five principles
 
-> Only three kinds of knowledge deserve to outlive the session:
+> **What deserves to outlive the session** — PREFERENTIAL, you said you like it that way · LIMITING, a boundary you set · TIMELESS, true today and in five months.
 >
-> **TIMELESS**, true today and in five months. **PREFERENTIAL**, you said you like it that way. **LIMITING**, a boundary you set.
+> **How anything gets written** — OBJECTIVE, the fact with its evidence and no verdict of value · NON-CONDITIONING, the state observed with its method, never a closed door.
 >
 > Everything else has a home that is not memory: documentation goes to `docs/`, open work goes to `ROADMAP.md`, and CLAUDE.md keeps the path.
 
-That one rule is the reason hi-claude projects stay sharp while others drown in their own notes.
+The first three are why hi-claude projects stay sharp while others drown in their own notes. The last two are why no document ever tells a future session that something is impossible — a closed verdict costs every session after it the attempt.
 
 ## The working method
 
-Three skills carry the parts of the craft that are not memory. They load when the moment calls for them, not before.
+Four skills carry the parts of the craft that are not memory. They load when the moment calls for them, not before.
 
 - **`roadmap`** — how work is taken, split, paused and closed. Every item declares what still blocks it: nothing, the real world, a window, your GO, or a dedicated measurement. Its "done" criterion is something you can *run*, not a sentence two sessions will read differently.
-- **`work-protocol`** — how it gets written down. No verdicts written as final, no "for now", no documentation that turns into a diary. A measured result is a datum with its N, reopenable. And every problem closed leaves the system easier to operate than it was: a log that names the cause instead of a generic one, a repair path, a preview flag.
+- **`work-protocol`** — how it gets written down. No verdicts written as final, no "for now", no documentation that turns into a diary. A measured result is a datum with its N, reopenable. Before correcting any text it measures what is TRUE NOW — discovering the project's own test runner, gate and live environment instead of assuming them. And every problem closed leaves the system easier to operate than it was.
+- **`delegation`** — what gets asked of a subagent and what happens to what it brings back. Delegate the looking, never the deciding, and never the change itself. A report is input to your judgement, never a substitute for it.
 - **`seeding-doubts`** — for when quality stalls and nothing looks obviously wrong. Introspection, then three subagents with deliberately different tones whose deliverable is **more doubts, never answers**, then immediate verification of everything checkable. There is no "it can't be done" — there is an angle not tried yet.
 
 ## What sharp looks like
@@ -103,10 +108,12 @@ Everything else stays sharp on its own, because only what deserves to survive th
 ## Numbers, not promises
 
 - Official plugin validation: passed, zero critical issues.
-- 57 trigger scenarios tested in English and Spanish, including deliberately tricky near-misses: **zero false triggers**, in every run. A skill never fires when it shouldn't.
-- Where a skill's recall fell short, the rule moved into a hook rather than into a longer description. The writing rules now apply on every markdown write — enforced, not hoped for.
-- A hook contract test bench that runs in one command, including two checks that the doctrine itself is not duplicated: a rule that lives in two files is a bug, and the tests say so.
-- The subagent write-block is not a hope: it rests on a measurement of what the hook actually receives, re-runnable when Claude Code changes.
+- 65 trigger scenarios in English and Spanish, including deliberately tricky near-misses. **Negatives: 29/29 — zero false triggers.** A skill never fires when it shouldn't.
+- Positive recall is the honest half: 24/36 in a full run, and the run-to-run variance on the floor model is larger than the effect of editing a description. It is reported as a datum with its N, not as a score.
+- **That is why recall is not what the method rests on.** Every rule that must apply *always* lives in a hook, measured case by case: `delegation` scored 0/4 on its own phrasings, so the protocol rides on the dispatch itself. `seeding-doubts` scored 0/4 — a stall is exactly when nothing feels like it needs a skill — so a prompt-level hook catches the phrasing deterministically. The writing rules ride on every markdown write.
+- **And the hooks were checked by EFFECT, not by whether a skill got invoked.** Same query, same model, with the plugin and without it. *"Algo anda mal y no sé qué"* → **with**: numbered doubts ordered by damage × cost, whatever is already shipped first. **Without**: "what specifically isn't working?". The protocol arrives and runs even though the harness still reports 0/4 — because the harness only ever sees skill invocations. A number that measures the wrong mechanism is worse than no number, so that limit is written into the runner itself.
+- 102 hook contract tests in one command: output envelopes per event, subagent containment through every tool, the full turn-close cycle, inventory drift, declared-protocol injection, and two checks that the doctrine itself is not duplicated — a rule living in two files is a bug, and the tests say so.
+- The subagent block rests on `agent_id`, a documented field of the hook payload, plus a re-runnable probe of what the hook actually receives. Its residual surface — a permitted test runner executes project code, and that code can write — is declared, not hidden.
 - Tested end to end on Windows, the environment where things usually break. Built cross-platform.
 - This repo runs on its own method: clean root, indexed docs, its own ROADMAP.
 
@@ -171,35 +178,40 @@ Reiniciá la sesión (o corré `/reload-plugins`). No hay paso 3.
 | **Día 1** | `/hi-claude:setup` te entrevista en lenguaje simple y genera tu CLAUDE.md, tu índice de docs, tu ROADMAP y tu memoria inicial. Siempre con tu aprobación. |
 | **Todos los días** | El trabajo abierto queda anotado sobre la marcha. Claude propone recordar solo lo que vale la pena: reglas atemporales, tus preferencias, tus límites. Y nunca toca la memoria ni el CLAUDE.md sin consultarte antes. |
 | **Cuando el contexto se comprime** | A Claude se le pide que escriba lo que quedó a medio hacer *antes* del resumen. Lo que sale del otro lado sigue sabiendo dónde estabas. |
-| **Mantenimiento** | `/hi-claude:audit` califica tu CLAUDE.md, tu memoria, tu roadmap y tu organización de la A a la F, muestra hallazgos con evidencia `archivo:línea`, y corrige solo lo que apruebes. |
+| **Mantenimiento** | `/hi-claude:audit` mide tu CLAUDE.md, tu memoria, tu roadmap, tu organización y tu inventario, muestra hallazgos con evidencia `archivo:línea`, y corrige solo lo que apruebes. Reporta lo que contó — nunca una calificación sobre tus propios archivos. |
 
 ## Cómo funciona
 
 | Capa | Qué garantiza |
 |---|---|
-| **La Constitución** | Tres invariantes —admisión, consulta, rastro— presentes desde el primer segundo de cada sesión, incluidas las reanudadas y las forkeadas. Nada más se carga de entrada; el resto se abre cuando la tarea lo pide. |
+| **La Constitución** | Cinco principios sobre dos ejes, la jerarquía que resuelve los conflictos entre ellos, y tres invariantes — presentes desde el primer segundo de cada sesión, incluidas las reanudadas y las forkeadas. Nada más se carga de entrada; el resto se abre cuando la tarea lo pide. |
 | **El ROADMAP** | Un archivo con lo que falta. Su bloque de trabajo abierto se inyecta en cada arranque, así que *"en qué quedamos"* tiene respuesta después de una compactación, de un `--resume` y de una semana sin tocar el proyecto. Cuando un ítem termina se **borra**, no se tilda — por eso el archivo no crece. |
 | **El Guardián** | Nada se escribe en el CLAUDE.md ni en la memoria sin tu confirmación explícita. Garantizado por código, no por confianza — incluidas las escrituras que intentan pasar por la terminal. |
-| **El rol del subagente** | Un subagente **investiga; no implementa.** Se lo declara al momento de nacer, y un hook le bloquea los intentos de escritura. Lo que trae es una hipótesis hasta que el agente principal la verifica de primera mano. |
+| **El rol del subagente** | Un subagente **investiga; nunca decide qué se hace.** Puede leer, inspeccionar, testear y medir — y un hook le bloquea toda escritura a tu proyecto por cualquier herramienta, sin escape por variable de entorno. Lo que trae es una hipótesis hasta que el agente principal la verifica de primera mano, y cada reporte lo dice en su línea de cierre. |
+| **El turno no termina viejo** | Un turno que cambió el sistema se frena una vez, con todo el circuito a cerrar: el registro, la foto viva, las docs, el inventario, la memoria, el CLAUDE.md. No un recordatorio que puede o no aparecer: un hook. |
+| **El inventario** | Cuatro documentos dicen qué skills, servidores MCP, plugins y tools puede usar este proyecto, descritos en proporción a lo que realmente se usa. El arranque avisa cuando lo instalado deja de coincidir con lo escrito. |
+| **Dudas que llegan solas** | Cerrás un bloque grande y el pre-mortem inverso te viene a buscar: *¿qué NO miramos?* Ofrece, nunca bloquea. Terminar bien es justo el momento en que nada se siente como que necesita una skill — por eso no puede quedar librado a una. |
+| **Los trabajos largos van al background** | Una corrida de tests, un build, un install: se marca en la llamada, el único momento en que todavía se puede cambiar. Una espera bloqueada cuesta el turno entero. |
 | **El protocolo de memoria** | Se activa solo cuando corregís algo, confirmás un enfoque o declarás una preferencia ("no me gusta...", "de ahora en más...", "recordá que..."). Propone qué recordar; vos decidís. |
-| **Cuatro auditores** | Revisores de solo lectura para CLAUDE.md, memoria, ROADMAP y organización. Cada hallazgo cita su evidencia, máximo dos por categoría, y tienen prohibido inventar problemas. Secretos en texto plano: F automática. |
+| **Cinco auditores** | Revisores de solo lectura para CLAUDE.md, memoria, ROADMAP, organización e inventario. Cada hallazgo cita su evidencia, máximo dos por categoría, y tienen prohibido inventar problemas. Reportan la medición, nunca una calificación sobre tus archivos. |
 
-## La regla de admisión
+## Los cinco principios
 
-> Solo tres tipos de conocimiento merecen sobrevivir a la sesión:
+> **Qué merece sobrevivir a la sesión** — PREFERENCIAL, dijiste que te gusta así · LIMITANTE, un límite que pusiste vos · ATEMPORAL, vale hoy y en cinco meses.
 >
-> **ATEMPORAL**, vale hoy y en cinco meses. **PREFERENCIAL**, dijiste que te gusta así. **LIMITANTE**, un límite que pusiste vos.
+> **Cómo se escribe cualquier cosa** — OBJETIVO, el hecho con su evidencia y sin juicio de valor · NO CONDICIONANTE, el estado observado con su método, nunca una puerta cerrada.
 >
 > Todo lo demás tiene una casa que no es la memoria: la documentación va a `docs/`, el trabajo abierto va al `ROADMAP.md`, y el CLAUDE.md se queda con el path.
 
-Esa única regla es la razón por la que los proyectos hi-claude se mantienen afilados mientras otros se ahogan en sus propias notas.
+Los tres primeros son la razón por la que los proyectos hi-claude se mantienen afilados mientras otros se ahogan en sus propias notas. Los dos últimos son la razón por la que ningún documento le dice a una sesión futura que algo es imposible — un veredicto cerrado le cuesta el intento a todas las que vengan después.
 
 ## El método de trabajo
 
-Tres skills cargan las partes del oficio que no son memoria. Se abren cuando el momento las pide, no antes.
+Cuatro skills cargan las partes del oficio que no son memoria. Se abren cuando el momento las pide, no antes.
 
 - **`roadmap`** — cómo se toma, se parte, se pausa y se cierra un trabajo. Cada ítem declara qué le falta además del trabajo: nada, el mundo real, una ventana, tu GO, o una medición dedicada. Su criterio de "hecho" es algo que se *corre*, no una frase que dos sesiones leen distinto.
-- **`work-protocol`** — cómo se deja escrito. Nada de veredictos escritos como finales, nada de "por ahora", nada de documentación que se convierte en diario. Un resultado medido es un dato con su N, reabrible. Y cada problema que se cierra deja el sistema más fácil de operar: un log que nombra la causa en vez de uno genérico, un camino de reparación, un flag de previsualización.
+- **`work-protocol`** — cómo se deja escrito. Nada de veredictos escritos como finales, nada de "por ahora", nada de documentación que se convierte en diario. Un resultado medido es un dato con su N, reabrible. Antes de corregir un texto mide qué es verdad HOY — descubriendo el runner de tests, el gate y el entorno vivo que el proyecto tenga, en vez de asumirlos. Y cada problema que se cierra deja el sistema más fácil de operar.
+- **`delegation`** — qué se le pide a un subagente y qué se hace con lo que trae. Se delega el MIRAR, nunca el DECIDIR, y jamás el cambio en sí. Un reporte es insumo de tu criterio, nunca un reemplazo.
 - **`seeding-doubts`** — para cuando la calidad se estanca y nada parece estar mal. Introspección, después tres subagentes con tonos deliberadamente distintos cuyo entregable son **más dudas, nunca respuestas**, y después validación inmediata de todo lo verificable. No existe el "no se puede": existe un ángulo que todavía no se probó.
 
 ## Así se ve "afilado"
@@ -216,10 +228,12 @@ Todo lo demás se mantiene afilado solo, porque únicamente lo que merece sobrev
 ## Números, no promesas
 
 - Validación oficial de plugins: aprobada, cero problemas críticos.
-- 57 escenarios de activación probados en español e inglés, con trampas deliberadas: **cero falsos disparos**, en todas las corridas. Una skill nunca se activa cuando no corresponde.
-- Donde a una skill le faltó recall, la regla se movió a un hook en vez de a una description más larga. Las reglas de escritura se aplican en cada escritura de markdown — garantizadas, no esperadas.
-- Un banco de pruebas de contrato de los hooks que corre con un comando, con dos chequeos de que la doctrina no se duplica a sí misma: una regla que vive en dos archivos es un bug, y los tests lo dicen.
-- El bloqueo de escritura a los subagentes no es una esperanza: se apoya en una medición de lo que el hook realmente recibe, re-corrible cuando Claude Code cambie.
+- 65 escenarios de activación en español e inglés, con trampas deliberadas. **Negativos: 29/29 — cero falsos disparos.** Una skill nunca se activa cuando no corresponde.
+- El recall positivo es la mitad honesta: 24/36 en una corrida completa, y la varianza entre corridas del modelo de piso supera al efecto de editar una description. Se reporta como dato con su N, no como puntaje.
+- **Por eso el método no se apoya en el recall.** Toda regla que debe aplicar *siempre* vive en un hook, medida caso por caso: `delegation` dio 0/4 en sus propias frases, así que el protocolo viaja en el despacho mismo. `seeding-doubts` dio 0/4 —un estancamiento es justo cuando nada se siente como que necesita una skill—, así que un hook a nivel de prompt captura la frase de forma determinista. Las reglas de escritura viajan en cada escritura de markdown.
+- **Y los hooks se verificaron por EFECTO, no por si una skill se invocó.** Misma query, mismo modelo, con el plugin y sin él. *"Algo anda mal y no sé qué"* → **con**: dudas numeradas y ordenadas por daño × costo, lo ya publicado primero. **Sin**: "¿qué específicamente no está funcionando?". El protocolo llega y se ejecuta aunque el harness siga reportando 0/4 — porque el harness solo ve invocaciones de skill. Un número que mide el mecanismo equivocado es peor que ningún número, así que ese límite quedó escrito en el runner mismo.
+- 102 pruebas de contrato de los hooks en un comando: envoltura de salida por evento, contención del subagente por cada herramienta, el ciclo completo de cierre de turno, drift del inventario, inyección de los protocolos declarados, y dos chequeos de que la doctrina no se duplica a sí misma — una regla que vive en dos archivos es un bug, y los tests lo dicen.
+- El bloqueo a los subagentes se apoya en `agent_id`, campo documentado del payload del hook, más una sonda re-corrible de lo que el hook realmente recibe. Su superficie residual —un runner de test permitido ejecuta código del proyecto, y ese código puede escribir— está declarada, no escondida.
 - Probado de punta a punta en Windows, el entorno donde todo suele romperse. Construido multiplataforma.
 - Este repo funciona con su propio método: root limpio, docs indexadas, su propio ROADMAP.
 
@@ -245,4 +259,4 @@ El logo dice *hi*. El plugin también.
 
 ---
 
-<p align="center">Requiere Claude Code ≥ 2.1.59 · En Windows, instalá <a href="https://git-scm.com/download/win">Git for Windows</a> para que todo funcione · MIT License · © <a href="https://hiagencia.com/?utm_source=github&utm_medium=readme&utm_campaign=hi-claude&utm_content=copyright">Hi Agencia</a></p>
+<p align="center">Requiere Claude Code ≥ 2.1.143 — el piso lo fija el evento <code>SubagentStart</code>, sobre el que se apoya el rol del subagente; verificado en 2.1.220. Si lo corrés en una versión anterior y funciona, decilo y bajamos el número. · En Windows, instalá <a href="https://git-scm.com/download/win">Git for Windows</a> para que todo funcione · MIT License · © <a href="https://hiagencia.com/?utm_source=github&utm_medium=readme&utm_campaign=hi-claude&utm_content=copyright">Hi Agencia</a></p>

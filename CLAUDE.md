@@ -1,12 +1,17 @@
 <!-- hi-claude dogfooding: this repo follows its own method. -->
 # hi-claude (plugin source)
 
-Claude Code plugin packaging the hi-claude working method: governed memory, a curated CLAUDE.md, a register of open work, subagents that investigate instead of implementing, clean structure, audits. This repo is BOTH the plugin and its marketplace.
+> **hi-claude governs this work** — the format, the practice, the retroactivity of every session. Its
+> five principles, their two axes and the hierarchy that settles conflicts between them are defined in
+> `skills/memory-protocol/constitution.md`, which the session hook injects at every start. Where form,
+> criterion or scope is in doubt, hi-claude decides.
+
+Claude Code plugin packaging the hi-claude working method: five principles with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work, subagents that investigate and never decide, an inventory of what a project can use, a turn that does not end stale, and audits. This repo is BOTH the plugin and its marketplace.
 
 ## Start here
 
-1. **`docs/ROADMAP.md`** — what is missing. Its `§0` carries the runnable session-done criterion.
-2. **`docs/ESTADO.md`** — what already exists: every hook, skill and auditor, with what each guarantees.
+1. **`docs/ESTADO.md`** — what exists: every hook, skill and auditor with what it guarantees, plus the contract gotchas that were measured rather than deduced.
+2. **`docs/ROADMAP.md`** — a pointer: open work for this plugin is kept in the maintainers' workspace, one level up, where both repos are visible. The runnable session-done criterion lives there, in its `§0`.
 3. **`docs/INDEX.md`** — everything else.
 
 ## How to work here — the hi-claude method
@@ -23,11 +28,12 @@ Claude Code plugin packaging the hi-claude working method: governed memory, a cu
 .claude-plugin/   manifests (plugin.json + marketplace.json)
 .gitattributes    pins hooks/** -text — load-bearing, see Gotchas
 LICENSE           MIT, Hi Agencia
-hooks/            hooks.json + run-hook.cmd (polyglot) + json-lib + one script per event,
-                  named by role where the event has none: PreToolUse is `guardian`
+hooks/            hooks.json + run-hook.cmd (polyglot) + json-lib + one script per ROLE, named by
+                  role because an event can carry more than one: PostToolUse has `tracker` (turn
+                  bookkeeping) and `report-received` (a subagent's report just came back)
 skills/           memory-protocol (+ constitution, references), roadmap (+ references),
-                  work-protocol, seeding-doubts, setup (+ templates es/en), audit
-agents/           read-only auditors (CLAUDE.md, memory, organization, ROADMAP)
+                  work-protocol, delegation, seeding-doubts, setup (+ templates es/en), audit
+agents/           read-only auditors (CLAUDE.md, memory, organization, ROADMAP, inventory)
 BRAND/            Hi Agencia logo (white = dark mode, dark = light mode, used by README)
 docs/             ROADMAP.md, ESTADO.md, INDEX.md
 tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
@@ -52,11 +58,13 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 | skill: memory-protocol | Before any write to memory or this file — admission + consultation |
 | skill: roadmap | Taking, splitting, pausing or closing work; before a compaction |
 | skill: work-protocol | Writing docs, comments or commits; closing a problem |
+| skill: delegation | Dispatching a subagent, and again when its report comes back |
 | skill: seeding-doubts | Stuck on quality, or right after closing a big block |
-| skill: setup | Bootstrapping CLAUDE.md / docs / ROADMAP from the es/en templates |
-| skill: audit (+ its auditor agents) | Health check of CLAUDE.md, memory, ROADMAP and organization; run before each release |
+| skill: setup | Bootstrapping CLAUDE.md / docs / register / inventory from the es/en templates |
+| skill: audit (+ its five auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization and inventory; run before each release |
 | `bash tests/run-hook-tests.sh` | After ANY change to a hook, a template marker, or the doctrine |
-| `plugin-dev` (agent `plugin-validator`) | After changing manifests, hooks or skill structure — part of the session-done gate in `docs/ROADMAP.md` §0 |
+| `claude plugin validate .claude-plugin/plugin.json` | After changing manifests, hooks, skills or agents. **Point it at the plugin.json, NOT at the directory**: given the directory it validates only the marketplace manifest and returns ✔ with a dead skill inside |
+| `plugin-dev` (agent `plugin-validator`) | Deeper structural review before a release, when the CLI check is not enough |
 | `hi-claude-internal/tests/triggering/run-evals.ps1` | MAINTAINERS ONLY (private repo) — after ANY change to a skill description; gate before shipping |
 | context7 (MCP) | Current Claude Code plugin/skill/hook API docs before editing manifests or hook scripts |
 

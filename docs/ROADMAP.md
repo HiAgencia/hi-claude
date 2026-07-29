@@ -1,66 +1,23 @@
-<!-- Registro ÚNICO de lo que falta en el plugin. Los comentarios HTML no consumen contexto. -->
+<!-- El registro de trabajo abierto vive un nivel arriba, en el workspace. Acá queda el puntero. -->
 # ROADMAP — hi-claude
 
-> Lo que FALTA, imperativo y atemporal. Al cerrarse un ítem se BORRA: lo hecho vive en `ESTADO.md`,
-> en el código y en los commits. Sin fechas, sin bitácora, sin ✅.
-
-## 0. Mapa de ejecución
-
-**Vías de cierre** — sin marca = `[C]`. Se marca solo lo que una sesión NO cierra sola:
-
-| Vía | Qué necesita además del trabajo | Qué puede hacer una sesión |
-|---|---|---|
-| `[C]` trabajo | nada | cerrarlo |
-| `[V]` verificar | una instalación real del plugin, una versión de Claude Code | dejarlo listo + el comando exacto que lo cierra |
-| `[O]` operación | el push al repo público, el marketplace | dejar el checklist ejecutable, no dispararlo |
-| `[D]` decisión | el GO del dueño del método | traer el dato que decide, no el argumento |
-| `[B]` medición | sesión dedicada de evals | fuera de alcance |
-
-**HUBS** — se hacen primero porque desbloquean a otros:
-*(todavía no hay)*
-
-**Criterio de sesión cerrada** — corrible, se corre antes de declarar nada:
-`bash tests/run-hook-tests.sh` verde · `plugin-dev:plugin-validator` sin críticos · si se tocó
-cualquier `description`, `run-evals.ps1` del taller privado ≥ el gate vigente.
-
-**Decisiones que frenan** — necesitan GO antes de avanzar:
-*(todavía no hay)*
+> **hi-claude gobierna este registro.** El trabajo abierto de este plugin cruza dos repos —este,
+> público, y el taller privado donde viven specs, planes y evals—, así que su registro ÚNICO se lleva
+> donde los dos son visibles: el workspace de sus mantenedores. Acá no se anotan ítems, porque dos
+> copias divergen y entonces hay que decidir cuál manda antes de poder trabajar.
 
 <!-- hi-claude:en-curso -->
-## 1. EN CURSO — máx 3
+El trabajo abierto de este plugin se lleva en el workspace de sus mantenedores, que contiene este
+repo junto al taller privado. Este archivo no lleva ítems propios: si clonaste solo este repo, no
+falta nada — el registro es de quien desarrolla el plugin, no del plugin.
 
-*(vacío)*
-
-<!-- Formato de un ítem:
-### Título imperativo  [V]
-Falta: una línea.
-Ya resuelto: una línea, re-escrita, nunca apilada.
-(Hecho: comando corrible)
--->
+Para tu PROPIO proyecto, el registro es `docs/ROADMAP.md` en su raíz: lo genera `/hi-claude:setup` y
+el método lo mantiene al día.
 <!-- /hi-claude:en-curso -->
 
-## 2. Método y eficacia
+## Qué sigue viviendo en este repo
 
-### Medir si el método MEJORA el resultado, no solo si las descriptions disparan  `[B]`
-Falta: el harness mide triggering de descriptions; nada mide si trabajar bajo el método produce mejor
-trabajo. Para un plugin de memoria alcanzaba; para uno de metodología es el hueco de fondo. Diseñar la
-vara antes que el experimento: qué se compara, contra qué línea base, con qué N.
-(Hecho: un reporte de evals en el taller privado con la comparación y su N.)
-
-## 3. Robustez
-
-### Dar repetición al harness de triggering  `[B]`
-Falta: el harness corre cada query UNA vez, y está medido que la varianza entre corridas supera al
-efecto de editar una description (la misma description exacta dio 3/4 y 0/4). Así sirve como gate de
-precisión, pero no para decidir si un cambio de texto mejoró algo. Necesita `-Repeat N` y reportar
-mediana, no el último resultado.
-(Hecho: `run-evals.ps1 -Ids @('sd-s-01') -Repeat 3` devuelve 3 resultados y su mediana.)
-
-### Revalidar `agent_id` cuando cambie la versión de Claude Code  `[V]`
-Falta: el `deny` a escrituras de subagentes depende de que `PreToolUse` reciba `agent_id`. Si una
-versión deja de mandarlo, el bloqueo deja de aplicarse EN SILENCIO — no falla ruidosamente.
-Ya resuelto: medido y documentado en la sonda de `agent_id` del taller privado
-sobre Claude Code 2.1.220, con el método de la sonda listo para re-correr.
-(Hecho: re-correr la sonda de `agent_id` del taller privado —hook temporal en `PreToolUse` que vuelca
-el payload, más una sesión headless que dispare un subagente que escriba— devuelve al menos una línea
-con `agent_id` en la versión vigente.)
+| Documento | Qué es |
+|---|---|
+| [ESTADO.md](ESTADO.md) | Lo que el plugin tiene hoy: hooks, skills, auditores y cómo se verifica cada uno |
+| [INDEX.md](INDEX.md) | Índice de la documentación pública |
