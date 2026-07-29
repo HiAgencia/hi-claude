@@ -22,11 +22,16 @@ size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
 # A big block just closed is when the inverse pre-mortem pays: what did we NOT look at? Measured,
 # a skill description never fires for this - finishing well feels like nothing needs a skill. So it
 # arrives here, as context, without blocking: doubts are an offer, never an obligation.
+# Two conditions, not one. Size alone fires on half of all work blocks (measured on this project's
+# own history), and an offer that shows up half the time is one that gets ignored. Requiring that the
+# turn also CLOSED work — it wrote the register — is what makes it land where the pre-mortem pays.
 BIG=6
-touched=$(wc -c < "$size" 2>/dev/null | tr -d ' ')
+touched=$(grep -c '^\.' "$size" 2>/dev/null | tr -d ' ')
 [ -n "$touched" ] || touched=0
+closed=$(grep -c '^closed$' "$size" 2>/dev/null | tr -d ' ')
+[ -n "$closed" ] || closed=0
 premortem=""
-if [ "$touched" -ge "$BIG" ]; then
+if [ "$touched" -ge "$BIG" ] && [ "$closed" -ge 1 ]; then
   premortem=" This turn changed ${touched} files - a block that size is worth an inverse pre-mortem before it is behind you: what did we NOT look at, which number is repeated across contexts, which reading would INVERT if checked. hi-claude:seeding-doubts holds the protocol; its output is MORE doubts to measure, never conclusions."
 fi
 

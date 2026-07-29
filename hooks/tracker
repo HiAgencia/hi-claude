@@ -31,12 +31,20 @@ size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
 # skill description alone never fires for it - there is no moment that feels like it needs a skill.
 case "$norm" in
   /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*.tmp) ;;
-  *) printf '.' >> "$size" 2>/dev/null ;;
+  *) printf '.
+' >> "$size" 2>/dev/null ;;
 esac
 
 # Writing the register, the live picture, the inventory, CLAUDE.md or memory settles the debt.
+# Touching the REGISTER also marks the turn as one that CLOSED work — which is a far better signal
+# for the inverse pre-mortem than turn size alone. Measured over this project's own work blocks:
+# half of them pass a size threshold of 6, and an offer that shows up half the time gets ignored.
+# Requiring both (closed work AND size) is what makes the offer land where it pays.
 case "$norm" in
-  */docs/roadmap.md|*/docs/estado.md|*/docs/state.md|*claude.md|*/memory/*.md)
+  */docs/roadmap.md)
+    printf 'closed\n' >> "$size" 2>/dev/null
+    rm -f "$marker" 2>/dev/null; exit 0 ;;
+  */docs/estado.md|*/docs/state.md|*claude.md|*/memory/*.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
   */docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;

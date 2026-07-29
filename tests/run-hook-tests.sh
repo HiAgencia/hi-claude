@@ -235,19 +235,31 @@ check "background: a subagent testing is untouched" guardian "$FIX/subagent-bash
 # --- seeding doubts fires ITSELF after a big block ---
 # Measured on delegation and on the writing rules: a description never fires where nothing feels
 # like it needs a skill, and finishing well is exactly that moment. So it arrives as an offer.
+# TWO conditions, not one: the turn was big AND it CLOSED work (it wrote the register). Measured over
+# this project's own history, size alone fires on 4 of 8 work blocks — an offer that shows up half the
+# time is one that gets ignored.
 SZ="${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
-rm -f "$SZ" "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
-printf '.......' > "$SZ"
+MK="${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
+rm -f "$SZ" "$MK"
+i=0; while [ $i -lt 7 ]; do run_hook tracker "$FIX/post-write-code.json" >/dev/null; i=$((i+1)); done
 out=$(run_hook closer "$FIX/stop.json")
-printf '%s' "$out" | grep -qF 'seeding-doubts' && ok "premortem: a big block gets the offer" \
-                                               || ko "premortem: a big block gets the offer" "$out"
+printf '%s' "$out" | grep -qF 'seeding-doubts' && ko "premortem: size alone is not enough" "$out" \
+                                              || ok "premortem: size alone is not enough"
+rm -f "$SZ" "$MK"
+i=0; while [ $i -lt 7 ]; do run_hook tracker "$FIX/post-write-code.json" >/dev/null; i=$((i+1)); done
+run_hook tracker "$FIX/post-write-roadmap.json" >/dev/null
+out=$(run_hook closer "$FIX/stop.json")
+printf '%s' "$out" | grep -qF 'seeding-doubts' && ok "premortem: big block + closed work gets the offer" \
+                                              || ko "premortem: big block + closed work gets the offer" "$out"
 printf '%s' "$out" | grep -qF '"decision"' && ko "premortem: it offers, never blocks" "$out" \
                                            || ok "premortem: it offers, never blocks"
 printf '%s' "$out" | grep -qF '"hookEventName": "Stop"' && ok "premortem: rides the Stop envelope" \
                                                         || ko "premortem: rides the Stop envelope" "$out"
-rm -f "$SZ"; printf '..' > "$SZ"
-check "premortem: a small turn stays silent" closer "$FIX/stop.json" empty
-rm -f "$SZ"
+rm -f "$SZ" "$MK"
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+run_hook tracker "$FIX/post-write-roadmap.json" >/dev/null
+check "premortem: a small closed turn stays silent" closer "$FIX/stop.json" empty
+rm -f "$SZ" "$MK"
 
 # --- the closer closes the WHOLE loop, not just the register ---
 # The rule is "every change updates docs, memory, the inventory, CLAUDE.md and the register". A
