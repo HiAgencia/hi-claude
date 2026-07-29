@@ -106,6 +106,18 @@ check "session-start: no roadmap, no noise" session-start "$f2" notcontains "## 
 check "session-start: still injects method" session-start "$f2" contains "hi-claude-method"
 rm -rf "$proj2" "$f2"
 
+# A workspace that HOLDS repos keeps its register one level in. A session opened at the root used
+# to see nothing at all — measured in this very repo-pair.
+ws=$(mktemp -d); inner=$(make_project); mv "$inner" "$ws/the-repo"
+f3=$(fixture_with_cwd session-start.json "$ws")
+check "session-start: finds the register one level in" session-start "$f3" contains "Sellar el kickoff con hora"
+# With two candidates, naming them beats picking one.
+inner2=$(make_project); mv "$inner2" "$ws/other-repo"
+f4=$(fixture_with_cwd session-start.json "$ws")
+check "session-start: two registers, names them"  session-start "$f4" contains "Registers found below"
+check "session-start: two registers, picks none"  session-start "$f4" notcontains "## Open work (docs/ROADMAP.md)"
+rm -rf "$ws" "$f3" "$f4"
+
 # --- guardian ---
 check "guardian: subagent write is denied"   guardian "$FIX/subagent-write.json"        contains '"deny"'
 check "guardian: subagent read passes"       guardian "$FIX/subagent-read.json"         empty
@@ -114,8 +126,44 @@ check "guardian: bash read of CLAUDE.md"     guardian "$FIX/bash-read-claude-md.
 check "guardian: write to CLAUDE.md"         guardian "$FIX/write-claude-md.json"       contains '"ask"'
 check "guardian: edit memory file"           guardian "$FIX/edit-memory.json"           contains '"ask"'
 check "guardian: normal write passes"        guardian "$FIX/write-normal.json"          empty
+# The env-var escape is gone: a switch nobody can see in the session is a hole with a name.
 out=$(HI_CLAUDE_SUBAGENT_WRITES=1 bash "$ROOT/hooks/guardian" < "$FIX/subagent-write.json")
-[ -z "$out" ] && ok "guardian: escape hatch works" || ko "guardian: escape hatch works" "$out"
+printf '%s' "$out" | grep -qF '"deny"' && ok "guardian: env-var escape no longer unblocks" \
+                                       || ko "guardian: env-var escape no longer unblocks" "$out"
+n=$(grep -c 'HI_CLAUDE_SUBAGENT_WRITES' "$ROOT/hooks/guardian" || true)
+[ "$n" -eq 0 ] && ok "guardian: escape hatch removed from source" \
+               || ko "guardian: escape hatch removed from source" "$n mentions"
+
+# --- subagent containment: no write path escapes, whatever the tool ---
+# Each of these was measured passing before the matcher covered every tool and the Bash policy
+# became an allowlist. A pattern hunt always trails the next command that writes.
+check "subagent: MCP write is denied"        guardian "$FIX/subagent-mcp-write.json"        contains '"deny"'
+check "subagent: interpreter write denied"   guardian "$FIX/subagent-bash-interpreter.json" contains '"deny"'
+check "subagent: cp over CLAUDE.md denied"   guardian "$FIX/subagent-bash-copy.json"        contains '"deny"'
+check "subagent: git commit denied"          guardian "$FIX/subagent-bash-git-commit.json"  contains '"deny"'
+check "subagent: dispatching work denied"    guardian "$FIX/subagent-dispatch.json"         contains '"deny"'
+# It may read, inspect, test and measure - that is the job.
+check "subagent: test runner passes"         guardian "$FIX/subagent-bash-test.json"        empty
+check "subagent: git status passes"          guardian "$FIX/subagent-bash-git-read.json"    empty
+check "subagent: read-only MCP passes"       guardian "$FIX/subagent-mcp-read.json"         empty
+# MCP policy is an ALLOWLIST of reading, not a blocklist of mutation. Measured: a blocklist is always
+# one verb behind — `mcp__ide__executeCode` runs arbitrary code, writes anything, and matched no
+# mutation verb. A tool whose name does not state that it READS is denied: the safe side of unknown.
+mcpq() { printf '{"hook_event_name":"PreToolUse","agent_id":"a1","tool_name":"%s","tool_input":{}}' "$1" \
+         | bash "$ROOT/hooks/guardian" 2>/dev/null; }
+mcp_bad=0
+for t in mcp__ide__executeCode mcp__filesystem__write_file mcp__db__run_migration \
+         mcp__x__apply_patch mcp__x__deploy mcp__x__send_email mcp__x__install_package; do
+  printf '%s' "$(mcpq "$t")" | grep -qF '"deny"' || { ko "mcp: denies $t" "passed"; mcp_bad=1; }
+done
+for t in mcp__context7__query-docs mcp__context7__resolve-library-id mcp__grep__searchGitHub \
+         mcp__ide__getDiagnostics mcp__exa__web_search_exa mcp__x__list_tables mcp__x__read_file; do
+  [ -z "$(mcpq "$t")" ] || { ko "mcp: allows $t" "denied - a subagent must be able to read"; mcp_bad=1; }
+done
+[ "$mcp_bad" -eq 0 ] && ok "mcp: allowlist of reading, everything else denied"
+check "subagent: write to scratchpad passes" guardian "$FIX/subagent-write-temp.json"       empty
+# The block is for subagents only: the main agent writes code without friction.
+check "main agent: code write passes"        guardian "$FIX/main-agent-write.json"          empty
 # False positives cost more than they protect: a prompt on every commit trains the user to click through.
 check "guardian: commit mentioning CLAUDE.md" guardian "$FIX/bash-commit-mentions-claude-md.json" empty
 check "guardian: 2>&1 is not a write"         guardian "$FIX/bash-stderr-redirect.json"           empty
@@ -134,6 +182,10 @@ check "guardian: memory path with spaces"      guardian "$FIX/edit-memory-path-w
 # --- subagent-start / pre-compact ---
 check "subagent-start: states read-only role" subagent-start "$FIX/subagent-write.json" contains "HYPOTHES"
 check "subagent-start: forbids implementing" subagent-start "$FIX/subagent-write.json" contains "not to implement"
+check "subagent-start: forbids deciding"     subagent-start "$FIX/subagent-write.json" contains "NEVER determine what gets done"
+check "subagent-start: carries no escape"    subagent-start "$FIX/subagent-write.json" contains "no escape switch"
+# The limit has to travel WITH the finding: a report gets read outside the context that produced it.
+check "subagent-start: demands the closing line" subagent-start "$FIX/subagent-write.json" contains "VERBATIM"
 check "pre-compact: points at EN CURSO"      pre-compact    "$FIX/pre-compact.json"    contains "docs/ROADMAP.md"
 
 # --- output envelopes must match what Claude Code's schema union accepts ---
@@ -143,6 +195,252 @@ rm -rf "$proj" "$f"
 envelope "envelope: subagent-start is JSON SubagentStart" subagent-start "$FIX/subagent-write.json" json  SubagentStart
 envelope "envelope: guardian is JSON PreToolUse"          guardian       "$FIX/write-claude-md.json" json PreToolUse
 envelope "envelope: pre-compact is PLAIN (not in union)"  pre-compact    "$FIX/pre-compact.json"    plain
+
+# --- a stall reaches its protocol deterministically ---
+# Measured on the harness: seeding-doubts fired 0/4 on its OWN explicit phrasings, one of them
+# reaching for the roadmap skill instead. A stall is exactly when nothing feels like it needs a
+# skill, so the trigger cannot live in a description.
+sig() { printf '{"session_id":"s","cwd":"C:/p","hook_event_name":"UserPromptSubmit","prompt_text":"%s"}' "$1" \
+        | bash "$ROOT/hooks/prompt-signals" 2>/dev/null; }
+for q in "Algo anda mal y no se que" "Que se nos esta escapando, no mejora nunca" \
+         "We are stuck. What are we missing?" "Nothing is improving. Take another look" \
+         "no se puede" "It cannot be done"; do
+  printf '%s' "$(sig "$q")" | grep -qF 'seeding-doubts' \
+    && ok "stall: fires on \"$(printf '%s' "$q" | cut -c1-28)\"" \
+    || ko "stall: fires on \"$(printf '%s' "$q" | cut -c1-28)\"" "silent"
+done
+# Ordinary work must stay silent - both of these are harness negatives.
+for q in "Este test falla, arreglalo" "I am missing a dependency, install it" "Que falta para terminar esto"; do
+  [ -z "$(sig "$q")" ] && ok "stall: silent on \"$(printf '%s' "$q" | cut -c1-24)\"" \
+                       || ko "stall: silent on \"$(printf '%s' "$q" | cut -c1-24)\"" "fired"
+done
+# The prompt field name is read under both spellings: assuming one and being wrong fails silently.
+printf '{"session_id":"s","hook_event_name":"UserPromptSubmit","prompt":"algo anda mal"}' \
+  | bash "$ROOT/hooks/prompt-signals" | grep -qF 'seeding-doubts' \
+  && ok "stall: reads the prompt under either field name" \
+  || ko "stall: reads the prompt under either field name" "missed 'prompt'"
+printf '{"session_id":"s","hook_event_name":"UserPromptSubmit","prompt_text":"algo anda mal"}' > "$FIX/prompt-stall.json"
+envelope "envelope: prompt-signals is JSON UserPromptSubmit" prompt-signals "$FIX/prompt-stall.json" json UserPromptSubmit
+
+# --- long jobs belong in the background ---
+# A blocked wait costs the whole turn. The call is the only moment it can still be changed, so the
+# check sits BEFORE the write detection: a test run writes nothing.
+check "background: npm test gets the nudge"   guardian "$FIX/main-bash-long.json"  contains "run_in_background"
+check "background: git status gets no nudge"  guardian "$FIX/main-bash-short.json" empty
+check "background: the nudge is not a decision" guardian "$FIX/main-bash-long.json" notcontains "permissionDecision"
+# A subagent may test and measure; the nudge must not turn into friction for it.
+printf '%s\n' '{"session_id":"S","agent_id":"a1","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"pytest tests/ -q"}}' > "$FIX/subagent-bash-pytest.json"
+check "background: a subagent testing is untouched" guardian "$FIX/subagent-bash-pytest.json" empty
+
+# --- seeding doubts fires ITSELF after a big block ---
+# Measured on delegation and on the writing rules: a description never fires where nothing feels
+# like it needs a skill, and finishing well is exactly that moment. So it arrives as an offer.
+SZ="${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
+rm -f "$SZ" "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
+printf '.......' > "$SZ"
+out=$(run_hook closer "$FIX/stop.json")
+printf '%s' "$out" | grep -qF 'seeding-doubts' && ok "premortem: a big block gets the offer" \
+                                               || ko "premortem: a big block gets the offer" "$out"
+printf '%s' "$out" | grep -qF '"decision"' && ko "premortem: it offers, never blocks" "$out" \
+                                           || ok "premortem: it offers, never blocks"
+printf '%s' "$out" | grep -qF '"hookEventName": "Stop"' && ok "premortem: rides the Stop envelope" \
+                                                        || ko "premortem: rides the Stop envelope" "$out"
+rm -f "$SZ"; printf '..' > "$SZ"
+check "premortem: a small turn stays silent" closer "$FIX/stop.json" empty
+rm -f "$SZ"
+
+# --- the closer closes the WHOLE loop, not just the register ---
+# The rule is "every change updates docs, memory, the inventory, CLAUDE.md and the register". A
+# closer that names only the register silently drops the other four.
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+out=$(run_hook closer "$FIX/stop.json")
+for part in ROADMAP inventory memory CLAUDE.md EFFECT; do
+  printf '%s' "$out" | grep -qF "$part" && ok "closer: demands $part" || ko "closer: demands $part" "$out"
+done
+rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
+# Writing an inventory document settles the debt too, or the loop can never be closed.
+printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\docs\\PLUGINS.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-inventory.json"
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+run_hook tracker "$FIX/post-write-inventory.json" >/dev/null
+check "closer: updating the inventory settles the debt" closer "$FIX/stop.json" empty
+
+# --- declared protocols: a path referenced and never opened does not govern ---
+pr=$(mktemp -d); mkdir -p "$pr/docs"
+cat > "$pr/docs/INDEX.md" <<'IDX'
+# Index
+| Document | What |
+|---|---|
+| [ROADMAP.md](ROADMAP.md) | the register |
+| [SECURITY.md](SECURITY.md) | how secrets are handled here |
+IDX
+fp=$(fixture_with_cwd session-start.json "$pr")
+check "protocols: injects declared titles"      session-start "$fp" contains "how secrets are handled here"
+check "protocols: injects the path, not content" session-start "$fp" contains "docs/SECURITY.md"
+# The register travels in its own block; repeating it is pure cost.
+out=$(run_hook session-start "$fp")
+[ "$(printf '%s' "$out" | grep -c 'docs/ROADMAP.md — the register')" -eq 0 ] \
+  && ok "protocols: does not repeat the register" || ko "protocols: does not repeat the register" "$out"
+rm -rf "$pr" "$fp"
+pr2=$(mktemp -d)
+fp2=$(fixture_with_cwd session-start.json "$pr2")
+check "protocols: no index, no noise" session-start "$fp2" notcontains "Declared documentation"
+rm -rf "$pr2" "$fp2"
+
+# --- the five auditors ---
+n=$(ls "$ROOT"/agents/*.md 2>/dev/null | wc -l)
+[ "$n" -eq 5 ] && ok "agents: five auditors present" || ko "agents: five auditors present" "$n"
+n=$(grep -lc "I never determine what gets done" "$ROOT"/agents/*.md 2>/dev/null | wc -l)
+[ "$n" -eq 5 ] && ok "agents: all five carry the closing line" || ko "agents: all five carry the closing line" "$n of 5"
+grep -q "inventory-auditor" "$ROOT/skills/audit/SKILL.md" \
+  && ok "audit: dispatches the inventory auditor" || ko "audit: dispatches the inventory auditor" "missing"
+
+# --- memory protocol knows BOTH axes ---
+grep -q "WRITING axis" "$ROOT/skills/memory-protocol/SKILL.md" \
+  && ok "memory-protocol: applies the writing axis" || ko "memory-protocol: applies the writing axis" "missing"
+grep -q "NON-CONDITIONING" "$ROOT/skills/memory-protocol/references/examples.md" \
+  && ok "memory-protocol: examples cover both axes" || ko "memory-protocol: examples cover both axes" "missing"
+
+# --- the matcher is load-bearing in BOTH directions ---
+# Too narrow and MCP writes escape unevaluated; `*` and the hook runs on every Read and Grep at a
+# measured ~430ms per call on Windows, which a session pays a hundred times over.
+H="$ROOT/hooks/hooks.json"
+grep -q 'mcp__\.\*' "$H" && ok "matcher: covers MCP tools" \
+                         || ko "matcher: covers MCP tools" "an MCP write would never be evaluated"
+grep -qE '"matcher": "[^"]*Agent[^"]*"' "$H" && ok "matcher: covers delegation tools" \
+                                             || ko "matcher: covers delegation tools" "missing"
+grep -q '"matcher": "\*"' "$H" && ko "matcher: not a blanket wildcard" "costs ~430ms on every tool call" \
+                              || ok "matcher: not a blanket wildcard"
+
+# --- inventory drift: a tool nobody knows about is a tool nobody uses ---
+inv=$(mktemp -d); mkdir -p "$inv/docs"
+reg="$inv/installed_plugins.json"
+cat > "$reg" <<'REG'
+{"version":2,"plugins":{"alpha-tool@some-market":[{"scope":"user"}],"beta-tool@some-market":[{"scope":"user"}]}}
+REG
+printf '# Plugins\n\n- alpha-tool: does a thing\n' > "$inv/docs/PLUGINS.md"
+fi_=$(fixture_with_cwd session-start.json "$inv")
+out=$(CLAUDE_CONFIG_DIR="$inv/cfg" bash "$ROOT/hooks/session-start" < "$fi_" 2>/dev/null)
+printf '%s' "$out" | grep -qF "Inventory drift" \
+  && ko "inventory: no registry, no noise" "$out" || ok "inventory: no registry, no noise"
+mkdir -p "$inv/cfg/plugins" && cp "$reg" "$inv/cfg/plugins/installed_plugins.json"
+out=$(CLAUDE_CONFIG_DIR="$inv/cfg" bash "$ROOT/hooks/session-start" < "$fi_" 2>/dev/null)
+printf '%s' "$out" | grep -qF "beta-tool" \
+  && ok "inventory: names what is installed and undeclared" || ko "inventory: names what is installed and undeclared" "$out"
+printf '%s' "$out" | grep -qF "alpha-tool " \
+  && ko "inventory: does not re-report what is declared" "$out" || ok "inventory: does not re-report what is declared"
+printf '# Plugins\n\n- alpha-tool: a thing\n- beta-tool: another\n' > "$inv/docs/PLUGINS.md"
+out=$(CLAUDE_CONFIG_DIR="$inv/cfg" bash "$ROOT/hooks/session-start" < "$fi_" 2>/dev/null)
+printf '%s' "$out" | grep -qF "Inventory drift" \
+  && ko "inventory: in sync, no noise" "$out" || ok "inventory: in sync, no noise"
+rm -rf "$inv" "$fi_"
+
+# --- delegation: the protocol arrives at the dispatch and at the RETURN ---
+# Measured on the triggering harness: as a skill description alone it fired 0/4 on explicit dispatch
+# phrasings (negatives 4/4 - it does not steal triggers, it just never gets its own). Dispatching has
+# no decision point where a skill feels required, so the rule moved into the hooks.
+check "dispatch: the main agent gets the protocol"  guardian "$FIX/main-dispatch.json" contains "never the DECIDING"
+check "dispatch: it is a nudge, not a decision"     guardian "$FIX/main-dispatch.json" notcontains "permissionDecision"
+check "dispatch: a subagent dispatching is denied"  guardian "$FIX/subagent-dispatch.json" contains '"deny"'
+check "return: the report is framed as hypothesis"  report-received "$FIX/post-agent-report.json" contains "HYPOTHESIS"
+check "return: no noise on unrelated tools"         report-received "$FIX/post-agent-noise.json"  empty
+envelope "envelope: report-received is JSON PostToolUse" report-received "$FIX/post-agent-report.json" json PostToolUse
+
+# --- turn close: a turn that changed the system does not end with the register stale ---
+# The whole point is that this is a GUARANTEE, not a probabilistic trigger: measured, a rule that
+# lives only in a description does not fire when there is no decision point that calls for it.
+MARK="${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
+rm -f "$MARK"
+
+run_hook tracker "$FIX/post-read.json" >/dev/null
+[ ! -f "$MARK" ] && ok "tracker: a read leaves no debt" || ko "tracker: a read leaves no debt" "marker exists"
+
+run_hook tracker "$FIX/post-write-temp.json" >/dev/null
+[ ! -f "$MARK" ] && ok "tracker: a temp write leaves no debt" || ko "tracker: a temp write leaves no debt" "marker exists"
+
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+[ -f "$MARK" ] && ok "tracker: a code write records the debt" || ko "tracker: a code write records the debt" "no marker"
+
+check "closer: blocks a turn that left the register stale" closer "$FIX/stop.json" contains '"decision": "block"'
+# Blocking must be TOP-LEVEL for Stop: a hookSpecificOutput envelope fails validation silently.
+check "closer: block is not wrapped in an envelope"        closer "$FIX/stop.json" notcontains "hookSpecificOutput"
+# It cleared the marker as it blocked, so the next stop passes: a guarantee that traps is not one.
+check "closer: never blocks twice in a row"                closer "$FIX/stop.json" empty
+
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+check "closer: honours stop_hook_active"                   closer "$FIX/stop-active.json" empty
+
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+run_hook tracker "$FIX/post-write-roadmap.json" >/dev/null
+check "closer: updating the register settles the debt"     closer "$FIX/stop.json" empty
+rm -f "$MARK"
+
+# --- sovereignty: every generated text says what rules it is under ---
+# A text that does not declare its rules gets its form re-litigated every session.
+miss=$(grep -L "hi-claude" "$ROOT"/skills/setup/templates/*/*.md 2>/dev/null | wc -l)
+[ "$miss" -eq 0 ] && ok "sovereignty: every template declares it" \
+                  || ko "sovereignty: every template declares it" "$miss templates without it"
+grep -q "hi-claude governs what persists here" "$ROOT/skills/memory-protocol/references/memory-schema.md" \
+  && ok "sovereignty: memory schema declares it" || ko "sovereignty: memory schema declares it" "missing"
+
+# --- OBJECTIVE: an auditor reports a datum, not a verdict of value ---
+# A letter grade on the user's own files is a judgement; the rubrics already produce the number.
+n=$(grep -l "GRADE:" "$ROOT"/agents/*.md 2>/dev/null | wc -l)
+[ "$n" -eq 0 ] && ok "auditors: report a measurement, not a grade" \
+               || ko "auditors: report a measurement, not a grade" "$n still grade A-F"
+n=$(grep -l "NON-CONDITIONING\|WRITING axis\|ADMISSION axis" "$ROOT"/agents/*.md 2>/dev/null | wc -l)
+[ "$n" -ge 3 ] && ok "auditors: score against the five principles" \
+               || ko "auditors: score against the five principles" "only $n of 4"
+
+# --- frontmatter must PARSE, or the component loads with empty metadata ---
+# A plain unquoted YAML scalar ends at the first ": ". A description written that way makes YAML read
+# a nested mapping and the WHOLE frontmatter is dropped: the skill still resolves by directory name,
+# but the model can never auto-trigger it, and nothing fails loudly. Measured: it cost `setup` its
+# 526-char description, and `claude plugin validate <dir>` reported success the whole time because
+# that form only checks the marketplace manifest. Use the plugin.json path to reach components.
+fm_bad=0
+for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/agents/*.md; do
+  [ -f "$f" ] || continue
+  line=$(grep -m1 '^description:' "$f" || true)
+  [ -n "$line" ] || { ko "frontmatter: $(basename "$(dirname "$f")") has a description" "none"; fm_bad=1; continue; }
+  val=${line#description:}; val=${val# }
+  case "$val" in
+    '|'*|'>'*|'"'*|"'"*) continue ;;   # block scalar or quoted: immune by construction
+  esac
+  if printf '%s' "$val" | grep -q ': '; then
+    ko "frontmatter: no colon-space in a plain scalar ($f)" "value ends early, metadata dropped"
+    fm_bad=1
+  fi
+done
+[ "$fm_bad" -eq 0 ] && ok "frontmatter: every skill and agent parses"
+
+# --- hook matchers name tools that actually exist ---
+# Matching is an UNANCHORED regex test, so a matcher also hits every tool whose name CONTAINS it.
+grep -q 'SlashCommand\|MultiEdit' "$ROOT/hooks/hooks.json" \
+  && ko "matcher: no dead tool names" "SlashCommand/MultiEdit are not tools in current Claude Code" \
+  || ok "matcher: no dead tool names"
+# Matcher coverage, tested the way Claude Code tests it: an UNANCHORED regex against the tool name.
+# That is what lets `Edit` cover MultiEdit and `Task` cover TaskCreate - and what makes `Write` catch
+# TodoWrite, which is why the guardian exempts it explicitly.
+# The PreToolUse matcher is the one carrying mcp__ - taking the FIRST matcher in the file would
+# grab SessionStart's source list and every assertion below would be meaningless.
+PTU=$(grep -o '"matcher": "[^"]*mcp__[^"]*"' "$ROOT/hooks/hooks.json" | sed 's/.*"matcher": "\(.*\)"/\1/')
+[ -n "$PTU" ] || ko "matcher: PreToolUse matcher found in hooks.json" "none carries mcp__"
+cov_bad=0
+for t in Write Edit MultiEdit NotebookEdit Bash Agent Task TaskCreate Workflow mcp__fs__write_file; do
+  printf '%s' "$t" | grep -Eq "$PTU" || { ko "matcher: covers $t" "not matched"; cov_bad=1; }
+done
+for t in Read Grep Glob WebFetch WebSearch Skill; do
+  printf '%s' "$t" | grep -Eq "$PTU" && { ko "matcher: spares $t" "matched - costs a bash spawn per call"; cov_bad=1; }
+done
+[ "$cov_bad" -eq 0 ] && ok "matcher: covers what decides, spares what only reads"
+# Delegating work onward is deciding: a subagent creating a task is denied, reading them is not.
+printf '%s\n' '{"hook_event_name":"PreToolUse","agent_id":"a1","tool_name":"TaskCreate","tool_input":{"prompt":"x"}}' > "$FIX/subagent-taskcreate.json"
+printf '%s\n' '{"hook_event_name":"PreToolUse","agent_id":"a1","tool_name":"TaskGet","tool_input":{}}' > "$FIX/subagent-taskget.json"
+check "subagent: creating a task is denied" guardian "$FIX/subagent-taskcreate.json" contains '"deny"'
+check "subagent: reading tasks passes"      guardian "$FIX/subagent-taskget.json"    empty
+# TodoWrite is session-local scratch, not a project artefact: denying it is friction, not protection.
+printf '%s\n' '{"hook_event_name":"PreToolUse","agent_id":"a1","tool_name":"TodoWrite","tool_input":{"todos":[]}}' > "$FIX/subagent-todowrite.json"
+check "subagent: TodoWrite is not a project write" guardian "$FIX/subagent-todowrite.json" empty
 
 # --- doctrine: one rule, one file ---
 # Scope: the instruction surface Claude loads (skills/), excluding the templates,
@@ -174,6 +472,12 @@ for lang in es en; do
   check "fresh ROADMAP ($lang): no open-work noise" session-start "$f" notcontains "## Open work (docs/ROADMAP.md)"
   rm -rf "$proj" "$f"
 done
+
+# The turn markers are session-scoped state in the temp dir. A test bench that leaves its own state
+# behind makes the NEXT run start dirty, and a closer that finds a stale marker blocks for nothing.
+rm -f "${TMPDIR:-/tmp}"/hi-claude-turn-TESTSESS "${TMPDIR:-/tmp}"/hi-claude-size-TESTSESS 2>/dev/null
+[ -e "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" ] || [ -e "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS" ] \
+  && ko "bench: leaves no state behind" "markers survived" || ok "bench: leaves no state behind"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","agent_id":"sub-abc123","agent_type":"Explore","tool_name":"Agent","tool_input":{"prompt":"go implement it","subagent_type":"general-purpose"}}

@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","agent_id":"sub-abc123","agent_type":"Explore","tool_name":"Bash","tool_input":{"command":"cp /tmp/x.md ./CLAUDE.md"}}

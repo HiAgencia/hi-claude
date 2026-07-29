@@ -1,0 +1,1 @@
+{"session_id":"TESTSESS","cwd":"C:\proj","hook_event_name":"PostToolUse","tool_name":"Agent","tool_input":{"prompt":"map the endpoints"},"tool_response":{"content":"found 3 things"}}

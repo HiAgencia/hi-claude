@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","agent_id":"sub-abc123","agent_type":"Explore","tool_name":"mcp__filesystem__write_file","tool_input":{"path":"C:\proj\src\app.js","content":"x"}}
