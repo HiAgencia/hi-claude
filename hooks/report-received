@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# PostToolUse for hi-claude, on the tools that bring back a subagent's work.
+#
+# The dispatch side is covered at PreToolUse; this is the RETURN side, and it is the one that
+# actually costs: a report reads as an answer, and the pull is to act on it. The rule that it is a
+# hypothesis has to land at the moment the report is in front of the reader, not before.
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "${SCRIPT_DIR}/json-lib"
+
+input=$(cat)
+tool=$(json_str "$input" tool_name)
+
+case "$tool" in
+  Agent|Task|Workflow) ;;
+  *) exit 0 ;;
+esac
+
+emit_context PostToolUse "hi-claude: what just came back is a HYPOTHESIS, not a decision. Before anything rests on it: read the report whole, and verify each finding you intend to use first-hand - open the file, run the command, read the row. A confident tone is not evidence, and this applies just as much to a report that agrees with you. What does not survive verification gets struck WITH the datum that struck it. The decision is yours, in your own words. Full protocol: the hi-claude:delegation skill."
+exit 0

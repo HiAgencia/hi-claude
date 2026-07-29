@@ -23,7 +23,33 @@ payload="<hi-claude-method>
 ${constitution}
 </hi-claude-method>"
 
+# Find the register. A workspace that HOLDS repos keeps its register one level in, and a session
+# opened at the root would otherwise see nothing. Looking one level down covers monorepos and
+# repo-pairs without guessing: with several candidates, naming them beats picking one.
 roadmap="${cwd}/docs/ROADMAP.md"
+if [ ! -f "$roadmap" ]; then
+  found=""; n=0
+  for d in "$cwd"/*/; do
+    [ -d "$d" ] || continue
+    if [ -f "${d}docs/ROADMAP.md" ]; then
+      n=$((n + 1))
+      found="${found}${d}docs/ROADMAP.md
+"
+    fi
+  done
+  if [ "$n" -eq 1 ]; then
+    roadmap=$(printf '%s' "$found" | head -n 1)
+  elif [ "$n" -gt 1 ]; then
+    payload="${payload}
+
+## Registers found below this directory
+
+No \`docs/ROADMAP.md\` here; these exist one level in. Open the one this session works on:
+
+${found}"
+  fi
+fi
+
 if [ -f "$roadmap" ]; then
   # HTML comments are scaffolding for the human editing the file (the item format
   # reminder); they are not open work, so they never ride into the session.
@@ -47,6 +73,55 @@ if [ -f "$roadmap" ]; then
 ## Open work (docs/ROADMAP.md)
 
 ${open_work}"
+  fi
+fi
+
+# Declared protocols. A path referenced in CLAUDE.md or in a memory is invisible unless the session
+# knows it exists: it gets read only when someone already suspects it is there. Injecting the TITLES
+# of the documentation index — never the content — makes every declared protocol a candidate the
+# session can weigh, at the cost of one line each.
+index="${cwd}/docs/INDEX.md"
+if [ -f "$index" ]; then
+  # The register and the live picture travel in their own block; repeating them here is pure cost.
+  titles=$(grep -oE '^\| \[[^]]+\]\([^)]+\)[^|]*\|[^|]*' "$index" \
+    | sed 's/^| \[\([^]]*\)\](\([^)]*\)).*|[[:space:]]*/- docs\/\2 — /' \
+    | grep -viE '^- docs/(ROADMAP|ESTADO|STATE)\.md' \
+    | cut -c1-120 | head -8)
+  if [ -n "$titles" ]; then
+    payload="${payload}
+
+## Declared documentation (docs/INDEX.md)
+
+Titles only. Open the one whose scope you are working in — a protocol referenced and never opened is
+a protocol that does not govern.
+
+${titles}"
+  fi
+fi
+
+# Inventory drift. A project that declares what it can use gets told when that stopped being true,
+# because a tool nobody knows about is a tool nobody uses. SCOPE: plugins, which are the only part
+# enumerable with certainty from a hook (installed_plugins.json). Skills, MCP servers and tools are
+# declared in their own documents and kept current by the method, not by this check.
+inventory="${cwd}/docs/PLUGINS.md"
+if [ -f "$inventory" ]; then
+  registry="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json"
+  if [ -f "$registry" ]; then
+    missing=""
+    for p in $(grep -oE '"[A-Za-z0-9._-]+@[A-Za-z0-9._-]+"[[:space:]]*:' "$registry" \
+                 | sed 's/"//g;s/[[:space:]]*:$//' | cut -d@ -f1 | sort -u); do
+      grep -qiF -- "$p" "$inventory" || missing="${missing}${p} "
+    done
+    if [ -n "$missing" ]; then
+      payload="${payload}
+
+## Inventory drift (docs/PLUGINS.md)
+
+Installed and not declared: ${missing}
+Describe what each one does here, or say it is not used in this project. What the inventory does not
+name, no session uses. This check covers PLUGINS only — skills, MCP servers and tools are declared in
+their own document and corrected when they change."
+    fi
   fi
 fi
 

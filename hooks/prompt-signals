@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# UserPromptSubmit for hi-claude: some things the user says have a protocol behind them, and a skill
+# description is not enough to reach it.
+#
+# Measured on the triggering harness: `seeding-doubts` fired 0/4 on its OWN explicit phrasings
+# ("algo anda mal y no sé qué", "we're stuck, what are we missing") - one of them reached for the
+# roadmap skill instead. The user reports the same thing from real use: it never came up on its own.
+# A stall is exactly the moment nothing feels like it needs a skill, so the trigger cannot live in a
+# description. It lives here, where the phrasing is literal and the match is deterministic.
+#
+# CONTRACT: hookSpecificOutput.additionalContext with hookEventName "UserPromptSubmit". The field is
+# `prompt` - verified against the event schema, where the docs did not show it. `prompt_text` is kept
+# as a fallback: costs one line, and assuming a field name and being wrong fails in total silence.
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "${SCRIPT_DIR}/json-lib"
+
+input=$(cat)
+
+prompt=$(json_str "$input" prompt)
+[ -z "$prompt" ] && prompt=$(json_str "$input" prompt_text)
+[ -n "$prompt" ] || exit 0
+
+lower=$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')
+
+# Deliberately narrow. "this test fails, fix it" and "I'm missing a dependency" are ordinary work,
+# not a stall - the harness carries both as negatives and they must stay silent.
+if printf '%s' "$lower" | grep -Eq \
+  'algo anda mal|no s[eé] qu[eé] (pasa|est|hay)|estamos estancad|seguimos estancad|no mejora (nada|nunca)|qu[eé] se nos (est[aá] )?escapa|revis[aá] todo de nuevo|no se puede|es imposible|no hay (forma|manera|caso)|nada funciona|we.?re stuck|are we missing|something.?s off|nothing is improving|take another look|it (can.?t|cannot) be done|no way to do'
+then
+  emit_context UserPromptSubmit "hi-claude: this reads as a quality stall or a closed verdict, and it has a protocol. There is no \"it cannot be done\" - there is an angle not tried yet. Do NOT answer with a conclusion: use the hi-claude:seeding-doubts skill to manufacture the angle. Its deliverable is MORE DOUBTS with their evidence, ordered by damage x cost, whatever is already shipped first; every checkable one gets verified on the spot, and a doubt refuted WITH data is worth as much as a confirmed one."
+fi
+
+exit 0

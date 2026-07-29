@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# PostToolUse for hi-claude: records whether this turn touched the system, so the closer can demand
+# the register be current before the turn ends.
+#
+# State is ONE marker file per session under the temp dir: no dependency, nothing written into the
+# user's project, and it dies with the machine's temp. Writing the register CLEARS the marker, which
+# is what makes the rule "every change updates the register" measurable instead of hoped for.
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "${SCRIPT_DIR}/json-lib"
+
+input=$(cat)
+tool=$(json_str "$input" tool_name)
+session=$(json_str "$input" session_id)
+file_path=$(json_str "$input" file_path)
+
+[ -n "$session" ] || exit 0
+
+case "$tool" in
+  Write|Edit|NotebookEdit) ;;
+  *) exit 0 ;;
+esac
+
+norm=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
+marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
+size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
+
+# Size of the turn, counted separately from the debt: closing the register settles the debt but does
+# not make the block smaller. A big block just closed is when the inverse pre-mortem pays, and a
+# skill description alone never fires for it - there is no moment that feels like it needs a skill.
+case "$norm" in
+  /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*.tmp) ;;
+  *) printf '.' >> "$size" 2>/dev/null ;;
+esac
+
+# Writing the register, the live picture, the inventory, CLAUDE.md or memory settles the debt.
+case "$norm" in
+  */docs/roadmap.md|*/docs/estado.md|*/docs/state.md|*claude.md|*/memory/*.md)
+    rm -f "$marker" 2>/dev/null; exit 0 ;;
+  */docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
+    rm -f "$marker" 2>/dev/null; exit 0 ;;
+esac
+
+# A temporary destination is not "the system".
+case "$norm" in
+  /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*.tmp) exit 0 ;;
+esac
+
+printf '%s\n' "$norm" >> "$marker" 2>/dev/null
+exit 0

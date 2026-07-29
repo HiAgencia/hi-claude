@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Stop hook for hi-claude: a turn that changed the system does not end with the register stale.
+#
+# CONTRACT: `decision` and `reason` are TOP-LEVEL for Stop - NOT a hookSpecificOutput envelope, which
+# is the union PreToolUse and SessionStart use. Getting this wrong fails schema validation and the
+# hook is dropped without any error the user would notice.
+#
+# It blocks ONCE per turn: the marker is cleared as it blocks, and `stop_hook_active` is honoured, so
+# a second stop in the same cycle always passes. A guarantee that traps the user is not a guarantee.
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "${SCRIPT_DIR}/json-lib"
+
+input=$(cat)
+session=$(json_str "$input" session_id)
+[ -n "$session" ] || exit 0
+
+marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
+size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
+
+# A big block just closed is when the inverse pre-mortem pays: what did we NOT look at? Measured,
+# a skill description never fires for this - finishing well feels like nothing needs a skill. So it
+# arrives here, as context, without blocking: doubts are an offer, never an obligation.
+BIG=6
+touched=$(wc -c < "$size" 2>/dev/null | tr -d ' ')
+[ -n "$touched" ] || touched=0
+premortem=""
+if [ "$touched" -ge "$BIG" ]; then
+  premortem=" This turn changed ${touched} files - a block that size is worth an inverse pre-mortem before it is behind you: what did we NOT look at, which number is repeated across contexts, which reading would INVERT if checked. hi-claude:seeding-doubts holds the protocol; its output is MORE doubts to measure, never conclusions."
+fi
+
+if [ ! -f "$marker" ]; then
+  # No debt, but a large block still deserves the offer.
+  if [ -n "$premortem" ]; then
+    rm -f "$size" 2>/dev/null
+    printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "Stop",\n    "additionalContext": "%s"\n  }\n}\n' \
+      "$(escape_for_json "hi-claude:${premortem}")"
+  fi
+  exit 0
+fi
+
+# Already inside a stop-hook cycle: never block twice.
+case "$input" in
+  *'"stop_hook_active": true'*|*'"stop_hook_active":true'*)
+    rm -f "$marker" "$size" 2>/dev/null; exit 0 ;;
+esac
+
+count=$(wc -l < "$marker" 2>/dev/null | tr -d ' ')
+rm -f "$marker" "$size" 2>/dev/null
+
+printf '{\n  "decision": "block",\n  "reason": "%s"\n}\n' "$(escape_for_json \
+"hi-claude: this turn changed ${count} file(s) and left the register untouched. Before ending, close the loop across ALL of it: (1) docs/ROADMAP.md - what is missing and what is already resolved, one line each, closed items DELETED, not ticked; (2) the live picture, if what exists changed; (3) any doc the change just made stale; (4) the inventory - if a skill, plugin, MCP server or tool was added, changed or retired, its document says so; (5) memory - propose anything the user stated as a preference or a limit; (6) CLAUDE.md, if a rule of the project changed. Verify by EFFECT: measure what is true now, never correct one text against another. Whatever does not apply to what you just did, say so in one line and finish.${premortem}")"
+exit 0

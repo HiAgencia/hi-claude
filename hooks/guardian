@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # PreToolUse policy for hi-claude.
-#   1. A subagent trying to WRITE anything -> deny (it investigates, it does not implement).
+#
+#   1. A SUBAGENT never decides what gets done and never touches the project's artefacts. It may
+#      read, inspect, test and measure — that is its job. Anything it writes outside a clearly
+#      temporary location is denied, through ANY tool, and so is delegating the work onward.
+#      There is no environment-variable escape: a switch nobody can see in the session is a hole
+#      with a name. The visible escape is disabling the plugin.
 #   2. Anyone writing a governed file (CLAUDE.md / persistent memory) -> ask.
 #   3. Anyone writing markdown -> the writing rules, in one line, with the skill that holds them.
 #      Measured: as a skill description alone this never fired, because writing prose has no
 #      decision point where a skill feels required. It is a guarantee or it is nothing.
+#
 # Everything else passes through untouched (empty output, exit 0).
 set -uo pipefail
 
@@ -17,8 +23,150 @@ tool=$(json_str "$input" tool_name)
 agent_id=$(json_str "$input" agent_id)
 file_path=$(json_str "$input" file_path)
 command=$(json_str "$input" command)
+cwd=$(json_str "$input" cwd)
 
-# Does this call write anything?
+DENY="hi-claude: a subagent investigates - it never decides what gets done and never touches the project's artefacts. Report what you saw as a HYPOTHESIS with its evidence (file:line). The main agent that dispatched you reads it, verifies it first-hand and makes the change."
+
+# Normalize a path: JSON doubles backslashes; unify separators, collapse dupes, lowercase.
+norm() { printf '%s' "$1" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]'; }
+
+# Every file_path in the payload. Key order inside tool_input is model-controlled, so a governed
+# path could sit in a later occurrence than the one json_str returns. Missing a decision is the
+# costly error; an extra one is not. Test EVERY occurrence.
+all_paths=$(printf '%s' "$input" \
+  | grep -o '"[a-z_]*path[a-z_]*"[[:space:]]*:[[:space:]]*"[^"]*"' \
+  | sed 's/.*:[[:space:]]*"\(.*\)"/\1/')
+
+# A destination a subagent may write: clearly temporary, never a project artefact.
+is_temp() {
+  case "$(norm "$1")" in
+    /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*/.cache/*|*.tmp) return 0 ;;
+  esac
+  return 1
+}
+
+# ---------------------------------------------------------------- 1. subagent
+if [ -n "$agent_id" ]; then
+
+  # 1a. Session-local scratch is not a project artefact. Matching is an UNANCHORED regex, so the
+  #     matcher above also catches TodoWrite, and the mutation-verb check below would deny it for
+  #     containing "write". Denying a subagent its own todo list is friction, not protection.
+  case "$tool" in
+    TodoWrite|TaskGet|TaskList|TaskOutput) exit 0 ;;
+  esac
+
+  # 1b. Delegating the work onward is still doing it.
+  case "$tool" in
+    Agent|Task|TaskCreate|TaskUpdate|Workflow)
+      emit_decision deny "$DENY"; exit 0 ;;
+  esac
+
+  # 1c. Known writing tools: allowed only when EVERY destination is temporary.
+  case "$tool" in
+    Write|Edit|NotebookEdit)
+      targets="$file_path
+$all_paths"
+      while IFS= read -r p; do
+        [ -n "$p" ] || continue
+        is_temp "$p" || { emit_decision deny "$DENY"; exit 0; }
+      done <<EOF
+$targets
+EOF
+      exit 0 ;;
+  esac
+
+  # 1d. Bash: an allowlist, not a pattern hunt. Detecting writes by pattern always trails the
+  #     next command that writes (python -c, node -e, cp). Read and test commands pass; the
+  #     rest is denied. A project widens it by listing prefixes in .claude/hi-claude-runners.
+  if [ "$tool" = "Bash" ]; then
+    # Any redirection to a non-temporary destination is a write, whatever the command is.
+    for dest in $(printf '%s' "$command" | grep -oE '>>?[[:space:]]*[^ &|;<>]+' | sed 's/^>*[[:space:]]*//'); do
+      is_temp "$dest" || { emit_decision deny "$DENY"; exit 0; }
+    done
+
+    extra=""
+    [ -n "$cwd" ] && [ -f "$(printf '%s' "$cwd" | sed 's#\\\\#\\#g')/.claude/hi-claude-runners" ] \
+      && extra=$(cat "$(printf '%s' "$cwd" | sed 's#\\\\#\\#g')/.claude/hi-claude-runners" 2>/dev/null)
+
+    bad=""
+    while IFS= read -r seg; do
+      seg=$(printf '%s' "$seg" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      [ -n "$seg" ] || continue
+      # A project-declared runner prefix wins before anything else.
+      matched=""
+      while IFS= read -r pref; do
+        [ -n "$pref" ] || continue
+        case "$seg" in "$pref"*) matched="yes" ;; esac
+      done <<EOF
+$extra
+EOF
+      [ -n "$matched" ] && continue
+      # shellcheck disable=SC2086
+      set -- $seg
+      case "${1:-}" in
+        ls|cat|head|tail|grep|rg|find|wc|which|where|echo|pwd|file|stat|sort|uniq|cut|tr|diff|basename|dirname|realpath|printenv|date|du|df|column|jq|yq|tree|env|test|true|cd|export)
+          ;;
+        git)
+          case "${2:-}" in
+            status|log|diff|show|branch|remote|ls-files|ls-remote|blame|describe|rev-parse|shortlog|cat-file|tag|config) ;;
+            *) bad="yes" ;;
+          esac ;;
+        pytest|jest|vitest|mocha|rspec|phpunit|tox|nox)
+          ;;
+        cargo|go|dotnet|mvn|gradle)
+          case "${2:-}" in test|check|vet|clippy) ;; *) bad="yes" ;; esac ;;
+        npm|yarn|pnpm)
+          case "${2:-} ${3:-}" in
+            "test "*|"audit "*|"ls "*|"run test"|"run lint"|"run typecheck"|"run check") ;;
+            *) bad="yes" ;;
+          esac ;;
+        *) bad="yes" ;;
+      esac
+    done <<EOF
+$(printf '%s' "$command" | tr ';|&' '\n')
+EOF
+    [ -n "$bad" ] && { emit_decision deny "$DENY"; exit 0; }
+    exit 0
+  fi
+
+  # 1e. MCP and anything else: an ALLOWLIST of reading, not a blocklist of mutation. Measured, a
+  #     blocklist is always one verb behind: `mcp__ide__executeCode` runs arbitrary code — it writes
+  #     whatever it wants — and matched no mutation verb. Same lesson as the Bash policy. A tool whose
+  #     name does not state that it READS is denied, which is the safe side of an unknown.
+  case "$(printf '%s' "$tool" | tr '[:upper:]' '[:lower:]')" in
+    *get*|*list*|*read*|*search*|*query*|*fetch*|*find*|*resolve*|*describe*|*show*|*view*|*inspect*|*diagnos*|*status*|*docs*|*lookup*|*explain*|*count*|*check*)
+      exit 0 ;;
+    *)
+      emit_decision deny "$DENY"; exit 0 ;;
+  esac
+fi
+
+# -------------------------------------------------- 2. the main agent DISPATCHING
+# The delegation protocol has to arrive HERE, at the dispatch. Measured on the triggering harness:
+# as a skill description alone it fired 0/4 on explicit dispatch phrasings, because dispatching has
+# no decision point where a skill feels required - the model simply dispatches. Same lesson as the
+# writing rules: it is a guarantee or it is nothing.
+case "$tool" in
+  Agent|Task|Workflow)
+    emit_context PreToolUse "hi-claude: delegate the LOOKING, never the DECIDING - and never the change itself, not even an additive one. Ask for evidence you can check (file:line, the command that reproduces). What comes back is a HYPOTHESIS: read it whole, verify it first-hand before anything rests on it, and own the decision in your own words. Full protocol: the hi-claude:delegation skill."
+    exit 0 ;;
+esac
+
+# ------------------------------------------- 3. long jobs belong in the background
+# A command that runs for minutes blocks the session on a wait it could spend working. The call is
+# the only moment it can still be changed, and it sits BEFORE the write checks on purpose: a test
+# run writes nothing, so anything after them never sees it.
+if [ "$tool" = "Bash" ]; then
+  case "$command" in
+    *run_in_background*) ;;
+    *)
+      printf '%s' "$command" | grep -Eq '(^|[;&|[:space:]])(pytest|jest|vitest|mocha|rspec|phpunit|tox|nox|gradle|mvn|terraform)([[:space:]]|$)|docker[[:space:]]+(build|compose)|npx[[:space:]]+playwright|run-evals|(npm|yarn|pnpm)[[:space:]]+(test|install|ci|run[[:space:]]+(test|build|e2e|lint))|(cargo|go|dotnet)[[:space:]]+(test|build)|(^|[[:space:]])make([[:space:]]|$)' \
+        && { emit_context PreToolUse "hi-claude: this reads as a job that runs for minutes. Prefer run_in_background so the session keeps working while it runs and picks the result up from the notification - a blocked wait costs the whole turn. Foreground only when the very next step needs its output."; exit 0; }
+      ;;
+  esac
+fi
+
+# ------------------------------------------------- 4. governed files (anyone)
 writes=""
 case "$tool" in
   Write|Edit|MultiEdit|NotebookEdit) writes="yes" ;;
@@ -28,44 +176,23 @@ case "$tool" in
       && writes="yes"
     ;;
 esac
-
-# 1. Subagents investigate; they do not implement.
-# agent_id is present only when the hook fires inside a subagent call
-# (measured on Claude Code 2.1.220 — see the internal repo's agent-id probe).
-if [ -n "$agent_id" ] && [ -n "$writes" ] && [ "${HI_CLAUDE_SUBAGENT_WRITES:-0}" != "1" ]; then
-  emit_decision deny "hi-claude: a subagent investigates, it does not implement. What it brings is a hypothesis - the main agent verifies it first-hand and makes the change. Set HI_CLAUDE_SUBAGENT_WRITES=1 to allow."
-  exit 0
-fi
-
-# 2. Governed files. Only when the call actually writes.
 [ -n "$writes" ] || exit 0
 
 target="$file_path"
 [ -z "$target" ] && target="$command"
 [ -z "$target" ] && exit 0
 
-# Normalize: JSON doubles backslashes; unify separators, collapse dupes, lowercase.
-normalized=$(printf '%s' "$target" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
-
-# Key order inside tool_input is model-controlled, so a governed path could in principle
-# sit in a later occurrence than the one json_str returns. Missing an "ask" is the costly
-# error; an extra one is not. Test EVERY occurrence in the payload, not just the first.
-all_paths=$(printf '%s' "$input" \
-  | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' \
-  | sed 's/.*:[[:space:]]*"\(.*\)"/\1/' \
-  | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
-
-# Read line by line: paths carry spaces (this plugin is developed under one), and
-# word-splitting them would break the directory-shaped patterns below.
+# Read line by line: paths carry spaces (this plugin is developed under one), and word-splitting
+# them would break the directory-shaped patterns below.
 governed=""
 while IFS= read -r candidate; do
   [ -n "$candidate" ] || continue
-  case "$candidate" in
+  case "$(norm "$candidate")" in
     *claude.md*|*claude.local.md*|*memory.md*) governed="yes" ;;
     *.claude/projects/*/memory/*.md*)          governed="yes" ;;
   esac
 done <<EOF
-$normalized
+$target
 $all_paths
 EOF
 
@@ -74,10 +201,11 @@ if [ -n "$governed" ]; then
   exit 0
 fi
 
-# 3. Markdown gets the writing rules. Short on purpose: it rides along on every doc write.
-case "$normalized" in
+# ------------------------------------------------------------ 5. markdown nudge
+# Short on purpose: it rides along on every doc write.
+case "$(norm "$target")" in
   *.md|*.md\ *|*.md\"*|*.md\'*)
-    emit_context PreToolUse "hi-claude: written work here is TIMELESS - no dates, no \"for now\", no verdicts written as final, and no doc that turns into a chronicle of what changed. A measured result is a datum with its N, reopenable. Full rules: the hi-claude:work-protocol skill."
+    emit_context PreToolUse "hi-claude: written work here is TIMELESS and NON-CONDITIONING - no dates, no \"for now\", no verdict that closes a door (ceiling, impossible, definitive), and no doc that turns into a chronicle. OBJECTIVE: the fact with its evidence, never a grade or an attributed cause. A measured result is a datum with its N, reopenable. Full rules: the hi-claude:work-protocol skill."
     ;;
 esac
 
