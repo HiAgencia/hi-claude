@@ -1,6 +1,9 @@
 <!-- Generado por hi-claude. Registro ÚNICO de lo que falta. Los comentarios HTML no consumen contexto. -->
 # ROADMAP — {{PROJECT_NAME}}
 
+> **hi-claude gobierna este registro.** Sus principios, su jerarquía y sus criterios de redacción
+> llegan solos a cada sesión — acá no se copian.
+>
 > Lo que FALTA, imperativo y atemporal. Al cerrarse un ítem se BORRA: lo hecho vive en `ESTADO.md`,
 > en el trabajo mismo y en los commits. Sin fechas, sin bitácora, sin ✅.
 

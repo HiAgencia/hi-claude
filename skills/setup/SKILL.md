@@ -1,6 +1,7 @@
 ---
 name: setup
-description: Day-1 onboarding for any project under the hi-claude method. Use when the user wants to set up, initialize, or organize a project ("set up this project", "configurá el proyecto", "empecemos", "cómo arranco", "ordená esta carpeta"), when a folder has no CLAUDE.md and the user asks how to begin, or right after the plugin is installed in a fresh project. Interactive: interviews the user, then generates CLAUDE.md, docs/INDEX.md, docs/ROADMAP.md, docs/ESTADO.md, base structure, and initial memory — all with explicit approval.
+description: |
+  Day-1 onboarding for any project under the hi-claude method. Use when the user wants to set up, initialize, or organize a project ("set up this project", "configurá el proyecto", "empecemos", "cómo arranco", "ordená esta carpeta"), when a folder has no CLAUDE.md and the user asks how to begin, or right after the plugin is installed in a fresh project.
 ---
 
 # hi-claude Setup
@@ -71,7 +72,32 @@ On approval: create the folders, then write from
 ROADMAP and STATE start empty on purpose: they fill up as work happens. If git is available and the
 user agrees, offer `git init` + first commit.
 
-## Phase 5 — Initial memory
+## Phase 5 — The inventory (four documents, built ONCE)
+
+A tool nobody knows about is a tool nobody uses, and a tools table written from memory ages the day it
+is written. Generate `docs/SKILLS.md`, `docs/MCP.md`, `docs/PLUGINS.md` and `docs/TOOLS.md` from
+`templates/<lang>/INVENTORY.template.md` — one template, four fills.
+
+What goes in each:
+
+| Document | Enumerate from | `{{INVENTORY_KIND}}` |
+|---|---|---|
+| `SKILLS.md` | the skills listed in THIS session's context | Skills |
+| `MCP.md` | the MCP servers connected in THIS session, tool by tool | MCP |
+| `PLUGINS.md` | `~/.claude/plugins/installed_plugins.json` — read it, do not guess | Plugins |
+| `TOOLS.md` | the native tools available in THIS session | Tools |
+
+- **Detail is PROPORTIONAL.** Only what the project uses gets a described block; everything else is a
+  name in the available list. A flat inventory where everything is described equally is one nobody
+  reads.
+- **Test what earns a block, INTENSIVELY.** This is written once and then stands, so a described tool
+  carries what was measured of it AND its observed limit — the limit is what saves the next session.
+  What was not tested says so; never write a capability you did not see.
+- `PLUGINS.md` is the one the start-up hook checks: it names anything installed that is not declared
+  there. Names must match what the registry uses, or the drift check fires forever.
+- Propose the four, wait for approval, then write.
+
+## Phase 6 — Initial memory
 
 If the user shared who they are (role, technical level, output preferences), propose ONE memory file
 `user-profile.md` (type `user`) following the memory-protocol skill format — with approval. If a
@@ -83,11 +109,11 @@ decision tree).
 If a CLAUDE.md already exists: do NOT overwrite. Audit it instead (`/hi-claude:audit claude-md`) and
 offer the missing pieces one by one, as explicit diffs:
 
+- the sovereignty declaration in the first block, and the five principles in the method section
 - the `Gotchas` section — what the file tree does NOT say
 - the `docs/ROADMAP.md` + `docs/ESTADO.md` pair, and the "Start here" reference to them
+- the four inventory documents (Phase 5) — offer them even when everything else is in place
 - the memory section, the tools table, and the docs index reference
-
-A project coming from hi-claude v1 needs exactly the first two; everything else is already there.
 
 ## Tone
 

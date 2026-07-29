@@ -1,6 +1,10 @@
 <!-- Generado por hi-claude. Las notas en comentarios HTML no consumen contexto de Claude. -->
 # {{PROJECT_NAME}}
 
+> **hi-claude gobierna este trabajo** — el formato, la práctica y la retroactividad de cada sesión.
+> Sus cinco principios, sus dos ejes (admisión y redacción) y la jerarquía que resuelve conflictos
+> entre ellos llegan solos a cada arranque. Ante duda de forma, criterio o alcance, decide hi-claude.
+
 {{PROJECT_DESCRIPTION}}
 
 ## Arrancá por acá
@@ -13,10 +17,11 @@
 
 Este proyecto se rige por el plugin **hi-claude** (instalado y activo): él inyecta este método en cada sesión y custodia las escrituras a este archivo y a la memoria. Auditorías: `/hi-claude:audit`.
 
-- A este archivo y a la memoria solo entra lo **ATEMPORAL, PREFERENCIAL o LIMITANTE**. El trabajo abierto va a `docs/ROADMAP.md`.
+- A este archivo y a la memoria solo entra lo que pasa el eje de **ADMISIÓN**: PREFERENCIAL, LIMITANTE, ATEMPORAL. El trabajo abierto va a `docs/ROADMAP.md`.
+- Lo que se escribe pasa además el eje de **REDACCIÓN**: OBJETIVO (el hecho con su evidencia, nunca un juicio) y NO CONDICIONANTE (el estado observado, nunca una puerta cerrada).
 - **Consultar SIEMPRE antes** de guardar, modificar o borrar en memoria o en este archivo.
 - La documentación **NO vive acá**: va a `docs/` (indexada en `docs/INDEX.md`) y acá solo se referencia el path.
-- Un subagente INVESTIGA; no implementa. Lo que trae es hipótesis hasta verificarlo de primera mano.
+- Un subagente INVESTIGA y **nunca decide qué se hace**. Lo que trae es hipótesis: la lee y resuelve el Claude principal que lo desplegó, verificándola de primera mano.
 - Root limpio: nada temporal, de prueba ni obsoleto suelto. Cada cosa en su carpeta.
 
 ## Memoria persistente de este proyecto
@@ -24,7 +29,7 @@ Este proyecto se rige por el plugin **hi-claude** (instalado y activo): él inye
 - Vive en: `{{MEMORY_PATH}}`
 - Índice: `MEMORY.md` — se carga al inicio de cada sesión (máx 200 líneas). Las memorias individuales se leen a demanda.
 - Tipos: `user` (quién es el usuario) · `feedback` (correcciones y enfoques validados) · `project` (decisiones) · `reference` (sistemas externos).
-- Solo entra lo ATEMPORAL, PREFERENCIAL o LIMITANTE — siempre con aprobación del usuario.
+- Solo entra lo que pasa el eje de ADMISIÓN — siempre con aprobación del usuario.
 
 ## Estructura del proyecto
 
