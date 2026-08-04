@@ -1,6 +1,6 @@
 ---
 name: work-protocol
-description: Use BEFORE writing or updating any documentation, README, code comment or commit message — this project BANS specific patterns in written work (dated state, verdicts written as final, docs that turn into a chronicle) and the ban list lives here, so writing without it produces text that has to be redone. Also use whenever a doc or comment might contradict the current code, and when closing a problem, to leave the system easier to operate instead of just covering the symptom. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "write it down", "update the docs", "document what you changed", "is this doc stale", "why is this so hard to debug".
+description: Use BEFORE writing, updating or DELETING any documentation, README, code comment or commit message — this project BANS specific patterns in written work (dated state, verdicts written as final, docs that turn into a chronicle) and carries the procedure for pruning text that stopped being true, so writing without it produces text that has to be redone and deleting without it loses the invariant that was worth keeping. Also use whenever a doc or comment might contradict the current code, whenever a document describes work that already shipped, and when closing a problem, to leave the system easier to operate instead of just covering the symptom. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "esto ya no sirve", "limpiá la documentación", "ya lo hicimos", "borralo", "write it down", "update the docs", "document what you changed", "is this doc stale", "this is obsolete", "clean up the docs", "we already did this", "why is this so hard to debug".
 ---
 
 # Work protocol (hi-claude)
@@ -15,6 +15,7 @@ Constitution, which every session already carries — here is how a violation is
 | a door closed on a future session — any of the shapes the Constitution forbids | the state OBSERVED, plus the condition that would reopen it |
 | a cause or an intent asserted without evidence, or a grade where a measurement belongs | the fact and its evidence, no verdict of value |
 | something that expires — a date, a state, a moment | the invariant behind it, or it goes unwritten |
+| a line already written that stopped being true, or that no future session would open | delete it — see PRUNED below; git keeps what leaves |
 
 - A measured result is a DATUM with its N and its method, REOPENABLE — never a closed verdict. What
   was measured and not adopted is recorded with the evidence that closed it, and with the condition
@@ -44,6 +45,44 @@ Any friction to find out, read, or verify the system — digging through runs on
 paths, crossing tables by hand, a timeout indistinguishable from an empty result — gets registered,
 and its improvement enters the ROADMAP. Register the idea even when it is not implemented now. The
 cheaper the system is to read, the more effective every session becomes.
+
+## How it gets PRUNED
+
+The CURRENCY axis of the method: the Constitution defines the principle, here is how it is executed.
+Adding is not the only way to close a loop — deleting closes it exactly as well, and a register that
+can only grow is one where every claim that expired stays indistinguishable from the ones that did not.
+
+**The measure is never size.** A document is not too long; it is carrying lines that stopped being
+true or stopped serving a future session. Report the expired lines, never the total.
+
+The procedure, in order — skipping a step is what turns pruning into losing something:
+
+1. **Verify by EFFECT.** The document never proves its own currency: unticked boxes do not mean the
+   work is open, and ticked ones do not mean it is done. Read the code, the shipped version, the
+   criterion that runs. What cannot be checked first-hand is not expired — it is UNVERIFIED, and it
+   stays until someone can check it.
+2. **Rescue the invariant.** Before anything goes, extract what still bites and lives ONLY there — a
+   gotcha, a constraint, a refutation that stops the next session from re-proposing a dead end. That
+   moves to the document that owns it. What gets deleted is the narration, not the knowledge.
+3. **Delete, do not decorate.** It leaves the tree; git keeps it. Not archived, not renamed to
+   `-old`, not struck through, not ticked as done. A document marked historical still gets read,
+   still costs context, and still has to be ruled on every time someone opens the folder.
+4. **Correct the index.** A document that leaves and an index that still declares it is a dead
+   reference; a document that stays and no index declares is one no session ever opens.
+
+**The replacement rule.** When vN+1 lands, vN leaves or survives as ONE line saying what it replaced
+and why — that line is worth writing only while a session could still reach for the old approach. A
+refutation with its evidence is the case that earns it: it stops the next session from re-proposing
+what was already measured and discarded.
+
+**The distance rule.** Nothing is pruned in the turn that produced it. What authorises deleting is the
+evidence of closure — the runnable criterion that passes, the version shipped, the test green — not the
+feeling of having finished. Fresh out of the work, the agent that did it is the worst judge of its own
+closure. In the heat: MARK it. Prune when the evidence lands.
+
+**The authority.** The method proposes and recommends; the agent decides; in doubt it asks the user.
+Deleting something whose closure is not verified by effect IS doubt. Memory and CLAUDE.md keep needing
+explicit approval regardless — a guard enforces it.
 
 ## Retroactivity — what you touch, you leave true
 

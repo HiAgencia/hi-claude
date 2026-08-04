@@ -2,8 +2,9 @@
 # {{PROJECT_NAME}}
 
 > **hi-claude gobierna este trabajo** — el formato, la práctica y la retroactividad de cada sesión.
-> Sus cinco principios, sus dos ejes (admisión y redacción) y la jerarquía que resuelve conflictos
-> entre ellos llegan solos a cada arranque. Ante duda de forma, criterio o alcance, decide hi-claude.
+> Sus seis principios, sus tres ejes (admisión, redacción y vigencia) y la jerarquía que resuelve
+> conflictos entre ellos llegan solos a cada arranque. Ante duda de forma, criterio o alcance, decide
+> hi-claude.
 
 {{PROJECT_DESCRIPTION}}
 

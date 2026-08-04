@@ -269,7 +269,75 @@ out=$(run_hook closer "$FIX/stop.json")
 for part in ROADMAP inventory memory CLAUDE.md EFFECT; do
   printf '%s' "$out" | grep -qF "$part" && ok "closer: demands $part" || ko "closer: demands $part" "$out"
 done
+# CURRENCY: the first question is what stopped being true, not what is missing. Measured on this
+# project's own history, six write destinations and zero deletions made adding a line the cheapest
+# way out of the debt every single time - which is how a register fills with claims that expired.
+printf '%s' "$out" | grep -qF 'WHAT STOPPED BEING TRUE' \
+  && ok "closer: asks what expired FIRST" || ko "closer: asks what expired FIRST" "$out"
+printf '%s' "$out" | grep -qF 'DELETING CLOSES THE LOOP' \
+  && ok "closer: deleting settles the debt like writing" || ko "closer: deleting settles the debt like writing" "$out"
+# The distance rule: fresh out of the work the agent assumes it finished and that it finished well.
+printf '%s' "$out" | grep -qF 'NOT PRUNED IN THIS TURN' \
+  && ok "closer: spares what this turn produced" || ko "closer: spares what this turn produced" "$out"
 rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
+# A document leaves the tree through the shell, which no PostToolUse write hook ever sees. Without
+# the index settling the debt, a turn that PRUNED stayed in debt and the only way out was to write
+# something new - the accumulation incentive, intact.
+printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\docs\\INDEX.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-index.json"
+run_hook tracker "$FIX/post-write-code.json" >/dev/null
+run_hook tracker "$FIX/post-write-index.json" >/dev/null
+check "closer: correcting the index settles the debt too" closer "$FIX/stop.json" empty
+rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
+
+# --- currency: one open plan at a time ---
+# The signal is UNTICKED BOXES, not the word "vigente"/"current": it has to hold in whatever language
+# the maintainers write in. The directory lives inside the repo on purpose - the tracker treats /tmp
+# and %TEMP% as non-system destinations, so a fixture under mktemp would test nothing at all.
+#
+# The payload is piped rather than stored: it has to carry an ABSOLUTE path to the bench's own
+# directory, and a fixture file holding one machine's paths is a fixture that only passes there.
+PD="$ROOT/tests/.currency-tmp/plans"
+mkdir -p "$PD"
+printf 'nuevo\n' > "$PD/new-plan.md"
+plan_write() {
+  printf '{"session_id":"TESTSESS","cwd":"%s","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"%s/new-plan.md","content":"x"},"tool_response":{}}' \
+    "$ROOT" "$PD" | bash "$ROOT/hooks/tracker" 2>/dev/null
+}
+printf -- '- [ ] Task one\n- [ ] Task two\n' > "$PD/old-plan.md"
+out=$(plan_write)
+printf '%s' "$out" | grep -qF "One open plan at a time" \
+  && ok "currency: a plan written beside an open one gets the signal" \
+  || ko "currency: a plan written beside an open one gets the signal" "$out"
+printf '%s' "$out" | grep -qF "permissionDecision" \
+  && ko "currency: the signal never blocks" "$out" || ok "currency: the signal never blocks"
+# The tracker never emitted anything before this signal. A PostToolUse payload that is not in Claude
+# Code's schema union is dropped with no error anyone would notice - the text is right, the envelope
+# is wrong, and a substring assertion cannot see it.
+printf '%s' "$out" | grep -qF '"hookEventName": "PostToolUse"' \
+  && ok "currency: the signal rides the PostToolUse envelope" \
+  || ko "currency: the signal rides the PostToolUse envelope" "$out"
+# It stays narrow: a signal that shows up on ordinary work is one that gets learnt away.
+printf -- '- [x] Task one\n' > "$PD/old-plan.md"
+printf '%s' "$(plan_write)" | grep -qF "One open plan at a time" \
+  && ko "currency: a closed neighbour raises nothing" "fired" \
+  || ok "currency: a closed neighbour raises nothing"
+rm -f "$PD/old-plan.md"
+printf '%s' "$(plan_write)" | grep -qF "One open plan at a time" \
+  && ko "currency: alone in the directory, silent" "fired" \
+  || ok "currency: alone in the directory, silent"
+check "currency: a code write raises nothing" tracker "$FIX/post-write-code.json" notcontains "One open plan at a time"
+rm -rf "$ROOT/tests/.currency-tmp"
+rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
+
+# --- the constitution carries the third axis ---
+# It is the only text that rides into EVERY session: a principle that is not here does not govern.
+CON="$ROOT/skills/memory-protocol/constitution.md"
+grep -q "CURRENCY" "$CON" && ok "constitution: carries the currency axis" \
+                          || ko "constitution: carries the currency axis" "missing"
+grep -q "SIZE IS NOT THE MEASURE" "$CON" && ok "constitution: size is not the measure" \
+                                         || ko "constitution: size is not the measure" "missing"
+grep -q "Nothing is pruned in the turn that produced it" "$CON" \
+  && ok "constitution: carries the distance rule" || ko "constitution: carries the distance rule" "missing"
 # Writing an inventory document settles the debt too, or the loop can never be closed.
 printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\docs\\PLUGINS.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-inventory.json"
 run_hook tracker "$FIX/post-write-code.json" >/dev/null
@@ -298,13 +366,26 @@ fp2=$(fixture_with_cwd session-start.json "$pr2")
 check "protocols: no index, no noise" session-start "$fp2" notcontains "Declared documentation"
 rm -rf "$pr2" "$fp2"
 
-# --- the five auditors ---
+# --- the six auditors ---
 n=$(ls "$ROOT"/agents/*.md 2>/dev/null | wc -l)
-[ "$n" -eq 5 ] && ok "agents: five auditors present" || ko "agents: five auditors present" "$n"
+[ "$n" -eq 6 ] && ok "agents: six auditors present" || ko "agents: six auditors present" "$n"
 n=$(grep -lc "I never determine what gets done" "$ROOT"/agents/*.md 2>/dev/null | wc -l)
-[ "$n" -eq 5 ] && ok "agents: all five carry the closing line" || ko "agents: all five carry the closing line" "$n of 5"
+[ "$n" -eq 6 ] && ok "agents: all six carry the closing line" || ko "agents: all six carry the closing line" "$n of 6"
 grep -q "inventory-auditor" "$ROOT/skills/audit/SKILL.md" \
   && ok "audit: dispatches the inventory auditor" || ko "audit: dispatches the inventory auditor" "missing"
+grep -q "currency-auditor" "$ROOT/skills/audit/SKILL.md" \
+  && ok "audit: dispatches the currency auditor" || ko "audit: dispatches the currency auditor" "missing"
+# Size is a symptom, not a defect: a long file where every line is live is healthy. A rubric that
+# scores line count teaches the opposite, which is the whole reason the criterion left.
+grep -q "Size under" "$ROOT"/agents/*.md \
+  && ko "auditors: line count scores nothing" "a rubric still charges points for size" \
+  || ok "auditors: line count scores nothing"
+# The currency auditor is worthless if it trusts the document it is auditing.
+grep -q "EFFECT" "$ROOT/agents/currency-auditor.md" \
+  && ok "currency-auditor: verifies by effect" || ko "currency-auditor: verifies by effect" "missing"
+grep -qi "distance rule" "$ROOT/agents/currency-auditor.md" \
+  && ok "currency-auditor: spares what the session just produced" \
+  || ko "currency-auditor: spares what the session just produced" "missing"
 
 # --- memory protocol knows BOTH axes ---
 grep -q "WRITING axis" "$ROOT/skills/memory-protocol/SKILL.md" \

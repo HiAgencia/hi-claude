@@ -22,7 +22,8 @@ case "$tool" in
   *) exit 0 ;;
 esac
 
-norm=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g' | tr '[:upper:]' '[:lower:]')
+real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
+norm=$(printf '%s' "$real" | tr '[:upper:]' '[:lower:]')
 marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
 size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
 
@@ -48,6 +49,11 @@ case "$norm" in
     rm -f "$marker" 2>/dev/null; exit 0 ;;
   */docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
+  # Correcting the index is what closes the loop after pruning: a document leaves the tree through
+  # the shell, which this hook never sees, so without this line a turn that PRUNED stayed in debt and
+  # the only way out was to write something new. That is the accumulation incentive, reversed here.
+  */docs/index.md)
+    rm -f "$marker" 2>/dev/null; exit 0 ;;
 esac
 
 # A temporary destination is not "the system".
@@ -56,4 +62,27 @@ case "$norm" in
 esac
 
 printf '%s\n' "$norm" >> "$marker" 2>/dev/null
+
+# CURRENCY signal. One open plan at a time: a plan whose work already shipped leaves the tree - git
+# keeps it - and a second one written beside it turns the directory into a pile of expired claims.
+# Measured on this project: two executed plans, 2780 lines, 94 unticked boxes describing shipped work,
+# and the index declaring both of them current.
+#
+# The test is UNTICKED BOXES, not the word "vigente"/"current": the signal has to hold in any language
+# the maintainers write in. It never blocks, and it stays narrow on purpose - it only fires while
+# writing INTO a plans/ or specs/ directory that already holds another document presenting itself as
+# open. A signal that shows up on ordinary work is one that gets learnt away.
+case "$norm" in
+  */plans/*.md|*/specs/*.md)
+    dir=$(dirname "$real")
+    others=0
+    for other in "$dir"/*.md; do
+      [ -f "$other" ] || continue
+      [ "$other" = "$real" ] && continue
+      grep -q '^[[:space:]]*[-*] \[ \]' "$other" 2>/dev/null && others=$((others + 1))
+    done
+    if [ "$others" -ge 1 ]; then
+      emit_context PostToolUse "hi-claude: ${others} other document(s) in $(basename "$dir")/ still carry unticked boxes, which presents them as open work. One open plan at a time. Check by EFFECT whether that work already shipped - the code, the version, the runnable criterion, never the boxes themselves. If it shipped, the document LEAVES THE TREE (git keeps it): it is not archived, not ticked, not renamed. Propose it to the user; nothing is deleted without their word."
+    fi ;;
+esac
 exit 0

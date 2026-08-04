@@ -7,6 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 . "${SCRIPT_DIR}/json-lib"
 
+# Claude Code caps `additionalContext` at 10.000 characters, and past that the payload is cut with no
+# error anyone would notice. 4.000 is the register's share of that budget: the constitution, the
+# declared titles and the drift block all ride in the SAME payload, so raising this silently steals
+# room from them. Rescued here from the v2 plan before it left the tree - it lived nowhere else.
 MAX_ROADMAP_CHARS=4000
 
 input=$(cat 2>/dev/null || true)

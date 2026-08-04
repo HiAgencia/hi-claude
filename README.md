@@ -58,13 +58,13 @@ Restart the session (or run `/reload-plugins`). There is no step 3.
 | **Day 1** | `/hi-claude:setup` interviews you in plain language and generates your CLAUDE.md, your docs index, your ROADMAP and your initial memory. With your approval, always. |
 | **Every day** | The open work stays written down as you go. Claude proposes remembering only what is worth keeping: timeless rules, your preferences, your limits. It never touches memory or CLAUDE.md without asking first. |
 | **When the context compacts** | Claude is told to write down what is half-finished *before* the squash. What comes out the other side still knows where you were. |
-| **Maintenance** | `/hi-claude:audit` measures your CLAUDE.md, your memory, your roadmap, your folder organization and your inventory, shows findings with `file:line` evidence, and fixes only what you approve. It reports what it counted — never a grade on your own files. |
+| **Maintenance** | `/hi-claude:audit` measures your CLAUDE.md, your memory, your roadmap, your folder organization, your inventory and how much of your documentation stopped being true, shows findings with `file:line` evidence, and fixes only what you approve. It reports what it counted — never a grade on your own files. |
 
 ## How it works
 
 | Layer | What it guarantees |
 |---|---|
-| **The Constitution** | Five principles on two axes, the hierarchy that settles conflicts between them, and three invariants — present from the first second of every session, including resumed and forked ones. Nothing else is loaded upfront; the rest opens when the task asks for it. |
+| **The Constitution** | Six principles on three axes, the hierarchy that settles conflicts between them, and four invariants — present from the first second of every session, including resumed and forked ones. Nothing else is loaded upfront; the rest opens when the task asks for it. |
 | **The ROADMAP** | One file holds what is missing. Its open-work block is injected at every session start, so *"where did we leave off"* has an answer that survives a compaction, a `--resume`, and a week off. When an item is finished it is **deleted**, not ticked — that is why the file stays short. |
 | **The Guardian** | Nothing gets written to CLAUDE.md or persistent memory without your explicit confirmation. Enforced by code, not by trust — including writes attempted through the shell. |
 | **The subagent's role** | A subagent **investigates; it never decides what gets done.** It may read, inspect, test and measure — and a hook denies every write to your project through any tool, with no environment-variable escape. What it brings back is a hypothesis until the main agent verifies it first-hand, and every report says so in its own closing line. |
@@ -73,17 +73,22 @@ Restart the session (or run `/reload-plugins`). There is no step 3.
 | **Doubts that arrive on their own** | Close a big block and the inverse pre-mortem comes to you — *what did we not look at?* It offers, never blocks. Finishing well is exactly the moment nothing feels like it needs a skill, which is why it cannot be left to one. |
 | **Long jobs go to the background** | A test run, a build, an install gets flagged at the call, the only moment it can still be changed. A blocked wait costs the whole turn. |
 | **The memory protocol** | Kicks in on its own when you correct something, confirm an approach, or state a preference ("I don't like...", "from now on...", "recordá que..."). It proposes what to remember; you decide. |
-| **Five auditors** | Read-only reviewers for CLAUDE.md, memory, ROADMAP, organization and the inventory. Every finding cites its evidence, two per category at most, and inventing problems is off the table. They report the measurement, never a grade on your files. |
+| **Nothing outlives its truth** | A plan whose work shipped, an item nobody deleted, a rule describing a flow the code replaced — all of it reads as current forever unless something asks the third question. A sixth auditor covers `docs/`, the turn ends by asking what stopped being true *before* asking what is missing, and deleting closes the loop exactly as writing does. **Size is never the measure**: nothing scores points for line count. |
+| **Six auditors** | Read-only reviewers for CLAUDE.md, memory, ROADMAP, organization, the inventory and currency. Every finding cites its evidence, two per category at most, and inventing problems is off the table. They report the measurement, never a grade on your files. Not one of them deletes: they propose. |
 
-## The five principles
+## The six principles
 
 > **What deserves to outlive the session** — PREFERENTIAL, you said you like it that way · LIMITING, a boundary you set · TIMELESS, true today and in five months.
 >
 > **How anything gets written** — OBJECTIVE, the fact with its evidence and no verdict of value · NON-CONDITIONING, the state observed with its method, never a closed door.
 >
+> **Whether what is already written is still alive** — CURRENT, a line stays while it is still true *and* still serves a future session. Failing either, it goes: not archived, not ticked, not struck through. Gone — git keeps it.
+>
 > Everything else has a home that is not memory: documentation goes to `docs/`, open work goes to `ROADMAP.md`, and CLAUDE.md keeps the path.
 
-The first three are why hi-claude projects stay sharp while others drown in their own notes. The last two are why no document ever tells a future session that something is impossible — a closed verdict costs every session after it the attempt.
+The first three are why hi-claude projects stay sharp while others drown in their own notes. The next two are why no document ever tells a future session that something is impossible — a closed verdict costs every session after it the attempt. The last one is why the notes that *are* kept do not quietly turn into a museum: 70.000 live lines are healthy, 40 dead ones are rot.
+
+And it cuts the other way too. **Nothing is pruned in the turn that produced it** — fresh out of the work, the one who did it is the worst judge of whether it closed well. What authorises deleting is evidence: the criterion that runs, the version shipped, the test green. In the heat, it gets marked; it gets pruned once the evidence lands, and never without your word.
 
 ## The working method
 
@@ -178,13 +183,13 @@ Reiniciá la sesión (o corré `/reload-plugins`). No hay paso 3.
 | **Día 1** | `/hi-claude:setup` te entrevista en lenguaje simple y genera tu CLAUDE.md, tu índice de docs, tu ROADMAP y tu memoria inicial. Siempre con tu aprobación. |
 | **Todos los días** | El trabajo abierto queda anotado sobre la marcha. Claude propone recordar solo lo que vale la pena: reglas atemporales, tus preferencias, tus límites. Y nunca toca la memoria ni el CLAUDE.md sin consultarte antes. |
 | **Cuando el contexto se comprime** | A Claude se le pide que escriba lo que quedó a medio hacer *antes* del resumen. Lo que sale del otro lado sigue sabiendo dónde estabas. |
-| **Mantenimiento** | `/hi-claude:audit` mide tu CLAUDE.md, tu memoria, tu roadmap, tu organización y tu inventario, muestra hallazgos con evidencia `archivo:línea`, y corrige solo lo que apruebes. Reporta lo que contó — nunca una calificación sobre tus propios archivos. |
+| **Mantenimiento** | `/hi-claude:audit` mide tu CLAUDE.md, tu memoria, tu roadmap, tu organización, tu inventario y cuánto de tu documentación dejó de ser verdad, muestra hallazgos con evidencia `archivo:línea`, y corrige solo lo que apruebes. Reporta lo que contó — nunca una calificación sobre tus propios archivos. |
 
 ## Cómo funciona
 
 | Capa | Qué garantiza |
 |---|---|
-| **La Constitución** | Cinco principios sobre dos ejes, la jerarquía que resuelve los conflictos entre ellos, y tres invariantes — presentes desde el primer segundo de cada sesión, incluidas las reanudadas y las forkeadas. Nada más se carga de entrada; el resto se abre cuando la tarea lo pide. |
+| **La Constitución** | Seis principios sobre tres ejes, la jerarquía que resuelve los conflictos entre ellos, y cuatro invariantes — presentes desde el primer segundo de cada sesión, incluidas las reanudadas y las forkeadas. Nada más se carga de entrada; el resto se abre cuando la tarea lo pide. |
 | **El ROADMAP** | Un archivo con lo que falta. Su bloque de trabajo abierto se inyecta en cada arranque, así que *"en qué quedamos"* tiene respuesta después de una compactación, de un `--resume` y de una semana sin tocar el proyecto. Cuando un ítem termina se **borra**, no se tilda — por eso el archivo no crece. |
 | **El Guardián** | Nada se escribe en el CLAUDE.md ni en la memoria sin tu confirmación explícita. Garantizado por código, no por confianza — incluidas las escrituras que intentan pasar por la terminal. |
 | **El rol del subagente** | Un subagente **investiga; nunca decide qué se hace.** Puede leer, inspeccionar, testear y medir — y un hook le bloquea toda escritura a tu proyecto por cualquier herramienta, sin escape por variable de entorno. Lo que trae es una hipótesis hasta que el agente principal la verifica de primera mano, y cada reporte lo dice en su línea de cierre. |
@@ -193,17 +198,22 @@ Reiniciá la sesión (o corré `/reload-plugins`). No hay paso 3.
 | **Dudas que llegan solas** | Cerrás un bloque grande y el pre-mortem inverso te viene a buscar: *¿qué NO miramos?* Ofrece, nunca bloquea. Terminar bien es justo el momento en que nada se siente como que necesita una skill — por eso no puede quedar librado a una. |
 | **Los trabajos largos van al background** | Una corrida de tests, un build, un install: se marca en la llamada, el único momento en que todavía se puede cambiar. Una espera bloqueada cuesta el turno entero. |
 | **El protocolo de memoria** | Se activa solo cuando corregís algo, confirmás un enfoque o declarás una preferencia ("no me gusta...", "de ahora en más...", "recordá que..."). Propone qué recordar; vos decidís. |
-| **Cinco auditores** | Revisores de solo lectura para CLAUDE.md, memoria, ROADMAP, organización e inventario. Cada hallazgo cita su evidencia, máximo dos por categoría, y tienen prohibido inventar problemas. Reportan la medición, nunca una calificación sobre tus archivos. |
+| **Nada sobrevive a su propia verdad** | Un plan cuyo trabajo ya salió, un ítem que nadie borró, una regla que describe un flujo que el código reemplazó: todo eso se lee como vigente para siempre si nada hace la tercera pregunta. Un sexto auditor cubre `docs/`, el cierre de turno pregunta qué dejó de ser verdad *antes* de preguntar qué falta, y borrar cierra el circuito igual que escribir. **El tamaño nunca es la vara**: nada puntúa por cantidad de líneas. |
+| **Seis auditores** | Revisores de solo lectura para CLAUDE.md, memoria, ROADMAP, organización, inventario y vigencia. Cada hallazgo cita su evidencia, máximo dos por categoría, y tienen prohibido inventar problemas. Reportan la medición, nunca una calificación sobre tus archivos. Ninguno borra: proponen. |
 
-## Los cinco principios
+## Los seis principios
 
 > **Qué merece sobrevivir a la sesión** — PREFERENCIAL, dijiste que te gusta así · LIMITANTE, un límite que pusiste vos · ATEMPORAL, vale hoy y en cinco meses.
 >
 > **Cómo se escribe cualquier cosa** — OBJETIVO, el hecho con su evidencia y sin juicio de valor · NO CONDICIONANTE, el estado observado con su método, nunca una puerta cerrada.
 >
+> **Si lo ya escrito sigue vivo** — VIGENTE, una línea se queda mientras siga siendo verdad *y* siga sirviéndole a una sesión futura. Si falla cualquiera de las dos, sale: no se archiva, no se tilda, no se tacha. Sale — git lo conserva.
+>
 > Todo lo demás tiene una casa que no es la memoria: la documentación va a `docs/`, el trabajo abierto va al `ROADMAP.md`, y el CLAUDE.md se queda con el path.
 
-Los tres primeros son la razón por la que los proyectos hi-claude se mantienen afilados mientras otros se ahogan en sus propias notas. Los dos últimos son la razón por la que ningún documento le dice a una sesión futura que algo es imposible — un veredicto cerrado le cuesta el intento a todas las que vengan después.
+Los tres primeros son la razón por la que los proyectos hi-claude se mantienen afilados mientras otros se ahogan en sus propias notas. Los dos siguientes son la razón por la que ningún documento le dice a una sesión futura que algo es imposible — un veredicto cerrado le cuesta el intento a todas las que vengan después. El último es la razón por la que las notas que sí se guardan no se convierten en museo: 70.000 líneas vivas están sanas, 40 muertas están podridas.
+
+Y corta para el otro lado también. **Nada se poda en el turno que lo produjo** — recién salido del trabajo, el que lo hizo es el peor juez de si cerró bien. Lo que autoriza a borrar es evidencia: el criterio que corre, la versión publicada, el test en verde. En caliente se marca; se poda cuando llega la evidencia, y nunca sin tu palabra.
 
 ## El método de trabajo
 

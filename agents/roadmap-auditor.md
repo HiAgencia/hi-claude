@@ -15,7 +15,7 @@ description: |
   <example>
   Context: The audit skill orchestrates a full audit
   user: "/hi-claude:audit all"
-  assistant: "Launching the four auditors in parallel."
+  assistant: "Launching the six auditors in parallel."
   <commentary>
   The audit skill dispatches this agent with the project root.
   </commentary>
@@ -46,6 +46,7 @@ already standing, so a session arriving cold does not redo it — one line, rewr
 | Criterion | Points | How to check |
 |---|---|---|
 | No closed items left behind | 20 | `✅`, "hecho", "done", "listo", "ya está", "completed", struck-through items |
+| No item describing work the system ALREADY HAS | 10 | The expensive one, and the only one that needs reading outside the file: for each item, check by EFFECT whether what it asks for already exists — the file, the flag, the command, the shipped version. An item nobody marked done but nobody deleted either reads as open work forever. What cannot be checked first-hand is reported as unverified, never scored as expired |
 | No dates, no temporal language | 15 | date patterns, "hoy", "today", "esta sesión", "por ahora", "for now", "last week" |
 | Open-work block present, marked, ≤3 items | 15 | both `hi-claude:en-curso` markers present; count `###` headings inside the block |
 | Progress lines did not become a log | 15 | a `Ya resuelto:`/`Resolved:` spanning more than two lines, or turned into a bullet list |
@@ -72,7 +73,7 @@ already standing, so a session arriving cold does not redo it — one line, rewr
 ## Output (exact structure)
 
 ```
-SCORE: <points>/110 — <n> criteria met, <n> with findings
+SCORE: <points>/120 — <n> criteria met, <n> with findings
 CRITICAL: <🚨 list with file:line, or "none">
 FINDINGS (top 2):
 1. [file:line] <what was observed> — WHY: <one line> — FIX: <concrete proposal, as a diff when it's a text change>

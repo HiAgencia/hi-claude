@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # Stop hook for hi-claude: a turn that changed the system does not end with the register stale.
 #
+# The FIRST question is what stopped being true, not what is missing. Measured on this project's own
+# history: six write destinations were demanded per turn and zero deletions, so the cheapest way to
+# settle the debt was always to add a line - which is how a register accumulates claims that expired.
+# Deleting settles it exactly as writing does. What the turn itself produced is explicitly exempt:
+# fresh out of the work the agent assumes it finished and that it finished well, and that reading
+# needs closing evidence before it authorises deleting anything.
+#
 # CONTRACT: `decision` and `reason` are TOP-LEVEL for Stop - NOT a hookSpecificOutput envelope, which
 # is the union PreToolUse and SessionStart use. Getting this wrong fails schema validation and the
 # hook is dropped without any error the user would notice.
@@ -55,5 +62,5 @@ count=$(wc -l < "$marker" 2>/dev/null | tr -d ' ')
 rm -f "$marker" "$size" 2>/dev/null
 
 printf '{\n  "decision": "block",\n  "reason": "%s"\n}\n' "$(escape_for_json \
-"hi-claude: this turn changed ${count} file(s) and left the register untouched. Before ending, close the loop across ALL of it: (1) docs/ROADMAP.md - what is missing and what is already resolved, one line each, closed items DELETED, not ticked; (2) the live picture, if what exists changed; (3) any doc the change just made stale; (4) the inventory - if a skill, plugin, MCP server or tool was added, changed or retired, its document says so; (5) memory - propose anything the user stated as a preference or a limit; (6) CLAUDE.md, if a rule of the project changed. Verify by EFFECT: measure what is true now, never correct one text against another. Whatever does not apply to what you just did, say so in one line and finish.${premortem}")"
+"hi-claude: this turn changed ${count} file(s) and left the register untouched. Close the loop, IN THIS ORDER: (1) WHAT STOPPED BEING TRUE because of this change - the doc, the comment, the rule or the item that describes the flow you just replaced. It gets corrected or DELETED where it lives; DELETING CLOSES THE LOOP EXACTLY AS WRITING DOES, and a closed item is deleted, never ticked. (2) docs/ROADMAP.md - what is missing and what is already resolved, one line each. (3) the live picture, if what exists changed. (4) the inventory - if a skill, plugin, MCP server or tool was added, changed or retired, its document says so. (5) memory - propose anything the user stated as a preference or a limit. (6) CLAUDE.md, if a rule of the project changed. Verify by EFFECT: measure what is true now, never correct one text against another. WHAT THIS TURN PRODUCED IS NOT PRUNED IN THIS TURN - fresh out of the work you are the worst judge of your own closure, so mark it and prune it when its closing evidence lands. Whatever does not apply to what you just did, say so in one line and finish.${premortem}")"
 exit 0

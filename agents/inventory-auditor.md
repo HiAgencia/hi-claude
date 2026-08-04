@@ -15,7 +15,7 @@ description: |
   <example>
   Context: The audit skill orchestrates a full audit
   user: "/hi-claude:audit all"
-  assistant: "Launching the five auditors in parallel."
+  assistant: "Launching the six auditors in parallel."
   <commentary>
   The audit skill dispatches this agent with the project root.
   </commentary>

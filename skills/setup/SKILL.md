@@ -109,7 +109,7 @@ decision tree).
 If a CLAUDE.md already exists: do NOT overwrite. Audit it instead (`/hi-claude:audit claude-md`) and
 offer the missing pieces one by one, as explicit diffs:
 
-- the sovereignty declaration in the first block, and the five principles in the method section
+- the sovereignty declaration in the first block, and the six principles in the method section
 - the `Gotchas` section — what the file tree does NOT say
 - the `docs/ROADMAP.md` + `docs/ESTADO.md` pair, and the "Start here" reference to them
 - the four inventory documents (Phase 5) — offer them even when everything else is in place

@@ -10,7 +10,7 @@
 
 | Documento | Qué es |
 |---|---|
-| [ESTADO.md](ESTADO.md) | Lo que HAY: los ocho hooks sobre siete eventos, las siete skills, los cinco auditores, los gotchas del contrato, las superficies declaradas y cómo se verifica cada cosa |
+| [ESTADO.md](ESTADO.md) | Lo que HAY: los ocho hooks sobre siete eventos, las siete skills, los seis auditores, los gotchas del contrato, las superficies declaradas y cómo se verifica cada cosa |
 | [ROADMAP.md](ROADMAP.md) | Puntero: el trabajo abierto de este plugin se lleva en el workspace de sus mantenedores, no en este repo |
 
 ## Contexto — se abre cuando la tarea lo pide

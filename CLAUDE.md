@@ -2,11 +2,11 @@
 # hi-claude (plugin source)
 
 > **hi-claude governs this work** — the format, the practice, the retroactivity of every session. Its
-> five principles, their two axes and the hierarchy that settles conflicts between them are defined in
+> six principles, their three axes and the hierarchy that settles conflicts between them are defined in
 > `skills/memory-protocol/constitution.md`, which the session hook injects at every start. Where form,
 > criterion or scope is in doubt, hi-claude decides.
 
-Claude Code plugin packaging the hi-claude working method: five principles with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work, subagents that investigate and never decide, an inventory of what a project can use, a turn that does not end stale, and audits. This repo is BOTH the plugin and its marketplace.
+Claude Code plugin packaging the hi-claude working method: six principles on three axes with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work, text that gets pruned when it stops being true, subagents that investigate and never decide, an inventory of what a project can use, a turn that does not end stale, and audits. This repo is BOTH the plugin and its marketplace.
 
 ## Start here
 
