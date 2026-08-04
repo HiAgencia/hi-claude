@@ -518,6 +518,16 @@ for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/agents/*.md; do
 done
 [ "$fm_bad" -eq 0 ] && ok "frontmatter: every skill and agent parses"
 
+# --- the two manifests must declare the SAME version ---
+# `plugin.json` is what the plugin reports; `marketplace.json` is what `/plugin update` compares
+# against. Bump one and not the other and the release is committed, pushed and invisible: users are
+# told they are up to date. Nothing failed loudly the time it happened — the validator passes either
+# way, because each manifest is valid on its own.
+pv=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$ROOT/.claude-plugin/plugin.json" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+mv_=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$ROOT/.claude-plugin/marketplace.json" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+[ -n "$pv" ] && [ "$pv" = "$mv_" ] && ok "manifests: plugin and marketplace agree on the version ($pv)" \
+                                   || ko "manifests: plugin and marketplace agree on the version" "plugin=$pv marketplace=$mv_"
+
 # --- hook matchers name tools that actually exist ---
 # Matching is an UNANCHORED regex test, so a matcher also hits every tool whose name CONTAINS it.
 grep -q 'SlashCommand\|MultiEdit' "$ROOT/hooks/hooks.json" \
