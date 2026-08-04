@@ -296,6 +296,17 @@ rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-
 #
 # The payload is piped rather than stored: it has to carry an ABSOLUTE path to the bench's own
 # directory, and a fixture file holding one machine's paths is a fixture that only passes there.
+#
+# The tracker treats /tmp, %TEMP% and scratchpad paths as destinations that are not "the system", so a
+# bench running from a repo cloned under one of them sees the hook exit before the signal. That is the
+# hook behaving as specified — a failure here would be the bench reporting its own location. Measured:
+# the pre-push clone landed under a scratchpad and these two turned red while the code was correct.
+# Declared and skipped, never skipped in silence.
+CURRENCY_HOME=$(printf '%s' "$ROOT" | tr '\\' '/' | tr '[:upper:]' '[:lower:]')
+case "$CURRENCY_HOME" in
+  /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*/temp/*)
+    printf 'SKIP  currency signal: this repo lives under a path the tracker treats as temporary\n      (%s) — clone it elsewhere to exercise these four checks\n' "$ROOT" ;;
+  *)
 PD="$ROOT/tests/.currency-tmp/plans"
 mkdir -p "$PD"
 printf 'nuevo\n' > "$PD/new-plan.md"
@@ -326,7 +337,8 @@ printf '%s' "$(plan_write)" | grep -qF "One open plan at a time" \
   && ko "currency: alone in the directory, silent" "fired" \
   || ok "currency: alone in the directory, silent"
 check "currency: a code write raises nothing" tracker "$FIX/post-write-code.json" notcontains "One open plan at a time"
-rm -rf "$ROOT/tests/.currency-tmp"
+rm -rf "$ROOT/tests/.currency-tmp" ;;
+esac
 rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
 
 # --- the constitution carries the third axis ---
