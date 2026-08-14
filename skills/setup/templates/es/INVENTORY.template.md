@@ -1,20 +1,39 @@
-<!-- Generado por hi-claude. Una plantilla, cuatro inventarios: SKILLS, MCP, PLUGINS, TOOLS. -->
-# {{INVENTORY_KIND}} — {{PROJECT_NAME}}
+<!-- Generado por hi-claude. UN inventario, cuatro secciones: skills, MCP, plugins y herramientas. -->
+# Inventario — {{PROJECT_NAME}}
 
-> **hi-claude gobierna este inventario.** Se construye una vez y se actualiza cuando algo cambia.
+> **hi-claude gobierna este inventario.** Qué puede usar una sesión acá. Se construye una vez y se
+> actualiza cuando algo cambia.
+>
 > Detalle PROPORCIONAL: lo que este proyecto usa por funcionamiento o prioridad va descrito con lo que
-> se midió; el resto queda nombrado, para que ninguna sesión lo ignore por no saber que existe.
+> se midió y su límite observado; el resto queda solo NOMBRADO, para que ninguna sesión lo ignore por
+> no saber que existe.
+>
+> Es UN documento y no cuatro: un tema repartido en varios archivos es un costo sin contraparte, y
+> ninguna sesión abre "skills" sin preguntarse también por lo demás que tiene a mano.
 
-## Prioritarios acá
+## Skills
 
-<!-- Un bloque por herramienta que el proyecto USA. Qué hace, cuándo se usa acá, y lo que se midió de
-     ella con su límite observado. Sin esto, cada sesión la redescubre o la ignora. -->
+{{SKILLS_ENTRIES}}
 
-{{PRIORITY_ENTRIES}}
+## MCP
+
+{{MCP_ENTRIES}}
+
+## Plugins
+
+<!-- El arranque contrasta ESTA sección contra lo instalado y nombra lo que no esté acá. Los nombres
+     tienen que coincidir con los del registro, o el aviso de drift no se apaga nunca. -->
+
+{{PLUGINS_ENTRIES}}
+
+## Herramientas
+
+{{TOOLS_ENTRIES}}
 
 ## Disponibles, sin uso declarado en este proyecto
 
-<!-- Solo nombres. Están al alcance y no son parte del flujo. Si alguna pasa a usarse, sube arriba. -->
+<!-- Solo nombres, de cualquiera de las cuatro clases. Están al alcance y no son parte del flujo. Si
+     alguna pasa a usarse, sube a su sección con lo que se midió. -->
 
 {{AVAILABLE_ENTRIES}}
 

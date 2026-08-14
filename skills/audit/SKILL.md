@@ -49,7 +49,7 @@ Each finding: [evidence file:line] — what was observed — why it matters — 
 
 - Project with no CLAUDE.md → skip that auditor; suggest `/hi-claude:setup` instead.
 - Project with no `docs/ROADMAP.md` → skip that auditor; offer to create the register.
-- Project with none of the four inventory documents → skip that auditor; offer to build the inventory
+- Project with no inventory document → skip that auditor; offer to build it
   (`/hi-claude:setup` phase 5), which is what makes the project's tooling usable at all.
 - Project with no `docs/` → skip the currency auditor; there is nothing to have expired.
 - **A deletion is proposed, never executed on the auditor's word.** Show what is inside the file, what

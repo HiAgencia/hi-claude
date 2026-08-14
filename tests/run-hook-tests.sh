@@ -588,6 +588,119 @@ for lang in es en; do
   rm -rf "$proj" "$f"
 done
 
+# --- belonging: the destination map rides on CREATION only ---
+# The negative matters as much as the positive: a signal that shows up on every doc write is one that
+# gets learnt away, and writing into an already-declared destination is ordinary work.
+bproj=$(mktemp -d); mkdir -p "$bproj/docs/motor"
+printf 'x\n' > "$bproj/docs/ROADMAP.md"
+printf 'x\n' > "$bproj/docs/CONTEXTO.md"
+bwrite() {
+  printf '{"session_id":"TESTSESS","cwd":"%s","hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"%s","content":"x"}}' \
+    "$bproj" "$1" | bash "$ROOT/hooks/guardian" 2>/dev/null
+}
+out=$(bwrite "$bproj/docs/NUEVA.md")
+printf '%s' "$out" | grep -qF "LAST option" \
+  && ok "belonging: creating a doc gets the destination map" \
+  || ko "belonging: creating a doc gets the destination map" "$out"
+# The map is what EXISTS, not what an index declares: a session can only reuse what is really there.
+printf '%s' "$out" | grep -qF "docs/CONTEXTO.md" \
+  && ok "belonging: the map names the real destinations" \
+  || ko "belonging: the map names the real destinations" "$out"
+printf '%s' "$out" | grep -qF "docs/motor/" \
+  && ok "belonging: folders count as destinations" \
+  || ko "belonging: folders count as destinations" "$out"
+printf '%s' "$out" | grep -qF "permissionDecision" \
+  && ko "belonging: the map never blocks" "$out" || ok "belonging: the map never blocks"
+out=$(bwrite "$bproj/docs/ROADMAP.md")
+printf '%s' "$out" | grep -qF "LAST option" \
+  && ko "belonging: an existing destination stays silent" "$out" \
+  || ok "belonging: an existing destination stays silent"
+# The writing rules still ride along - the map is additive, it replaces nothing.
+printf '%s' "$out" | grep -qF "TIMELESS" \
+  && ok "belonging: the writing rules still ride along" \
+  || ko "belonging: the writing rules still ride along" "$out"
+rm -rf "$bproj"
+
+# --- belonging: deleting what git does NOT keep ---
+# A tracked file passes with no friction; an untracked one has no copy, so the call is the user's.
+#
+# The scratch repo canNOT live under $ROOT (this plugin is developed under a path WITH SPACES, and the
+# hook reads the command as whitespace-separated tokens) nor under the temp dir (the hook treats any
+# temporary destination as not-a-project-artefact and skips it by design). $HOME satisfies both.
+dproj="$HOME/.hi-claude-deltest"
+rm -rf "$dproj" 2>/dev/null; mkdir -p "$dproj"
+if git -C "$dproj" init -q >/dev/null 2>&1; then
+  printf 'kept\n' > "$dproj/kept.md"
+  git -C "$dproj" add kept.md >/dev/null 2>&1
+  git -C "$dproj" -c user.email=t@t -c user.name=t commit -qm init >/dev/null 2>&1
+  printf 'scrap\n' > "$dproj/scrap.md"
+  delcmd() {
+    printf '{"session_id":"TESTSESS","cwd":"%s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm %s"}}' \
+      "$dproj" "$1" | bash "$ROOT/hooks/guardian" 2>/dev/null
+  }
+  out=$(delcmd "$dproj/scrap.md")
+  printf '%s' "$out" | grep -qF "NO copy" \
+    && ok "belonging: deleting an untracked file asks" \
+    || ko "belonging: deleting an untracked file asks" "$out"
+  printf '%s' "$out" | grep -qF '"ask"' \
+    && ok "belonging: it asks the user, it does not deny" \
+    || ko "belonging: it asks the user, it does not deny" "$out"
+  out=$(delcmd "$dproj/kept.md")
+  printf '%s' "$out" | grep -qF "NO copy" \
+    && ko "belonging: deleting a tracked file passes" "$out" \
+    || ok "belonging: deleting a tracked file passes"
+else
+  printf 'SKIP  belonging deletion: no git available to build the scratch repo\n'
+fi
+rm -rf "$dproj" 2>/dev/null
+
+# --- belonging: the register's MONOTONY ---
+# Measured on a real register: 99.060 -> 853.468 bytes over three weeks without one drop. Monotony is
+# the signal because the two alternatives were refuted on that same file - by ITEM parses 0 blocks
+# (`### ` appears zero times), and by LINE reaches 40% of the volume at 800 ch.
+case "$(printf '%s' "$ROOT" | tr '[:upper:]' '[:lower:]')" in
+  /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*)
+    printf 'SKIP  belonging monotony: this repo lives under a path the tracker treats as temporary\n      (%s) — clone it elsewhere to exercise these two checks\n' "$ROOT" ;;
+  *)
+MP="$ROOT/tests/.belonging-tmp"; mkdir -p "$MP/docs"
+grow() { awk -v n="$1" 'BEGIN{ while (i++ < n) printf "x" }' > "$MP/docs/ROADMAP.md"; }
+mwrite() {
+  printf '{"session_id":"MONOSESS","cwd":"%s","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"%s/docs/ROADMAP.md","content":"x"},"tool_response":{}}' \
+    "$MP" "$MP" | bash "$ROOT/hooks/tracker" 2>/dev/null
+}
+rm -f "${TMPDIR:-/tmp}/hi-claude-reg-MONOSESS"
+out=""
+for n in 400 800 1200 1600 2000; do grow "$n"; out=$(mwrite); done
+printf '%s' "$out" | grep -qF "only GREW" \
+  && ok "belonging: a register that only grows gets the signal" \
+  || ko "belonging: a register that only grows gets the signal" "$out"
+printf '%s' "$out" | grep -qF "permissionDecision" \
+  && ko "belonging: the monotony signal never blocks" "$out" \
+  || ok "belonging: the monotony signal never blocks"
+# A register that OSCILLATES is the healthy one: work comes in, work closes. It must stay silent.
+rm -f "${TMPDIR:-/tmp}/hi-claude-reg-MONOSESS"
+out=""
+for n in 400 800 1200 900 1300; do grow "$n"; out=$(mwrite); done
+printf '%s' "$out" | grep -qF "only GREW" \
+  && ko "belonging: a register that oscillates stays silent" "$out" \
+  || ok "belonging: a register that oscillates stays silent"
+rm -rf "$MP"
+rm -f "${TMPDIR:-/tmp}/hi-claude-reg-MONOSESS" "${TMPDIR:-/tmp}/hi-claude-turn-MONOSESS" \
+      "${TMPDIR:-/tmp}/hi-claude-size-MONOSESS"
+    ;;
+esac
+
+# --- belonging: the doctrine reached the constitution ---
+grep -qF "BELONGS" "$ROOT/skills/memory-protocol/constitution.md" \
+  && ok "constitution: carries the belonging axis" \
+  || ko "constitution: carries the belonging axis" "missing"
+grep -qF "CURRENT sits above BELONGS" "$ROOT/skills/memory-protocol/constitution.md" \
+  && ok "constitution: currency outranks belonging" \
+  || ko "constitution: currency outranks belonging" "missing"
+grep -qF "MOVING IS NOT PRUNING" "$ROOT/hooks/closer" \
+  && ok "closer: asks what is not in its place" \
+  || ko "closer: asks what is not in its place" "missing"
+
 # The turn markers are session-scoped state in the temp dir. A test bench that leaves its own state
 # behind makes the NEXT run start dirty, and a closer that finds a stale marker blocks for nothing.
 rm -f "${TMPDIR:-/tmp}"/hi-claude-turn-TESTSESS "${TMPDIR:-/tmp}"/hi-claude-size-TESTSESS 2>/dev/null

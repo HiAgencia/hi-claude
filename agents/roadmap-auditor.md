@@ -41,7 +41,7 @@ already standing, so a session arriving cold does not redo it — one line, rewr
    `/hi-claude:setup`.
 2. Locate `./docs/ESTADO.md` or `./docs/STATE.md`. Optional: its absence costs only its own criterion.
 3. Read both fully.
-4. Score the rubric (100 points):
+4. Score the rubric (135 points):
 
 | Criterion | Points | How to check |
 |---|---|---|
@@ -50,6 +50,8 @@ already standing, so a session arriving cold does not redo it — one line, rewr
 | No dates, no temporal language | 15 | date patterns, "hoy", "today", "esta sesión", "por ahora", "for now", "last week" |
 | Open-work block present, marked, ≤3 items | 15 | both `hi-claude:en-curso` markers present; count `###` headings inside the block |
 | Progress lines did not become a log | 15 | a `Ya resuelto:`/`Resolved:` spanning more than two lines, or turned into a bullet list |
+| No context embedded that OUTLIVES its item | 10 | The context a register carries is TEMPORARY: it lives while the item is OPEN and goes when the item closes. Flag evidence, measurements or reasoning that would survive the item — that belongs to the context document, and MOVING it there is not pruning. Judge each item against its NEIGHBOURS, not a fixed threshold, and never by parsing `###`: measured on a real register `### ` appeared 0 times while the volume lived in loose bullets of 800-2.052 ch, so an item-parsing rule measures nothing |
+| The register OSCILLATES | 5 | A healthy register goes up and down: work comes in, work closes. If git history is not available say so and skip; if it is, a size that only ever grew is the signal — measured on a real register, 99.060 → 853.468 bytes across three weeks without one drop |
 | Closing routes coherent | 10 | an unmarked (`[C]`) item whose own description requires a deploy, a real event, a window, or the user's GO |
 | Runnable `(Hecho: …)` / `(Done: …)` where the item admits one | 10 | proportion of items carrying a criterion; prose criteria do not count as runnable |
 | §0 carries a runnable session-done criterion | 10 | present, and a command rather than a sentence |
@@ -73,7 +75,7 @@ already standing, so a session arriving cold does not redo it — one line, rewr
 ## Output (exact structure)
 
 ```
-SCORE: <points>/120 — <n> criteria met, <n> with findings
+SCORE: <points>/135 — <n> criteria met, <n> with findings
 CRITICAL: <🚨 list with file:line, or "none">
 FINDINGS (top 2):
 1. [file:line] <what was observed> — WHY: <one line> — FIX: <concrete proposal, as a diff when it's a text change>

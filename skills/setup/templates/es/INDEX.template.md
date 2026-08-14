@@ -19,10 +19,8 @@
 
 | Documento | Qué es |
 |---|---|
-| [SKILLS.md](SKILLS.md) | Skills disponibles; las que este proyecto usa, descritas |
-| [PLUGINS.md](PLUGINS.md) | Plugins instalados; el arranque avisa si deja de coincidir con lo real |
-| [MCP.md](MCP.md) | Servidores MCP conectados y qué expone cada uno |
-| [TOOLS.md](TOOLS.md) | Tools que sostienen el trabajo acá, con lo medido de cada una |
+| [INVENTARIO.md](INVENTARIO.md) | Qué puede usar una sesión acá: skills, MCP, plugins y herramientas en UN documento. Lo que este proyecto usa va con lo medido y su límite; el resto, nombrado. El arranque avisa si su sección de Plugins deja de coincidir con lo instalado |
+| [CONTEXTO.md](CONTEXTO.md) | Lo que NO se abre en cada sesión, todo junto y comprimido. Es el destino por defecto: crear un documento nuevo es la ÚLTIMA opción |
 
 ## Contexto — se abre cuando la tarea lo pide
 

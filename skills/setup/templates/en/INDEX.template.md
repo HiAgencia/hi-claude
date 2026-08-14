@@ -12,10 +12,8 @@
 
 | Document | What it is |
 |---|---|
-| [SKILLS.md](SKILLS.md) | Available skills; the ones this project uses, described |
-| [PLUGINS.md](PLUGINS.md) | Installed plugins; start-up flags it when this stops matching reality |
-| [MCP.md](MCP.md) | Connected MCP servers and what each one exposes |
-| [TOOLS.md](TOOLS.md) | Tools that carry the work here, with what was measured of each |
+| [INVENTORY.md](INVENTORY.md) | What a session can use here: skills, MCP, plugins and tools in ONE document. Whatever this project uses carries what was measured and its limit; the rest is named. Start-up flags it when the Plugins section stops matching what is installed |
+| [CONTEXT.md](CONTEXT.md) | Whatever is NOT opened every session, together and compressed. It is the default destination: creating a new document is the LAST option |
 
 ## Key documents — read at the start of a session
 

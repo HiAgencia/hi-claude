@@ -107,8 +107,11 @@ fi
 # because a tool nobody knows about is a tool nobody uses. SCOPE: plugins, which are the only part
 # enumerable with certainty from a hook (installed_plugins.json). Skills, MCP servers and tools are
 # declared in their own documents and kept current by the method, not by this check.
-inventory="${cwd}/docs/PLUGINS.md"
-if [ -f "$inventory" ]; then
+inventory=""
+for cand in "${cwd}/docs/INVENTARIO.md" "${cwd}/docs/INVENTORY.md" "${cwd}/docs/PLUGINS.md"; do
+  [ -f "$cand" ] && { inventory="$cand"; break; }
+done
+if [ -n "$inventory" ]; then
   registry="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json"
   if [ -f "$registry" ]; then
     missing=""
@@ -119,7 +122,7 @@ if [ -f "$inventory" ]; then
     if [ -n "$missing" ]; then
       payload="${payload}
 
-## Inventory drift (docs/PLUGINS.md)
+## Inventory drift (docs/$(basename "$inventory"))
 
 Installed and not declared: ${missing}
 Describe what each one does here, or say it is not used in this project. What the inventory does not

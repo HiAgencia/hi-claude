@@ -1,6 +1,6 @@
 ---
 name: work-protocol
-description: Use BEFORE writing, updating or DELETING any documentation, README, code comment or commit message — this project BANS specific patterns in written work (dated state, verdicts written as final, docs that turn into a chronicle) and carries the procedure for pruning text that stopped being true, so writing without it produces text that has to be redone and deleting without it loses the invariant that was worth keeping. Also use whenever a doc or comment might contradict the current code, whenever a document describes work that already shipped, and when closing a problem, to leave the system easier to operate instead of just covering the symptom. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "esto ya no sirve", "limpiá la documentación", "ya lo hicimos", "borralo", "write it down", "update the docs", "document what you changed", "is this doc stale", "this is obsolete", "clean up the docs", "we already did this", "why is this so hard to debug".
+description: Use BEFORE writing, updating, MOVING, MERGING or DELETING any documentation, README, code comment or commit message — this project BANS specific patterns in written work (dated state, verdicts written as final, docs that turn into a chronicle), decides WHERE each content belongs before it is written, and carries the procedure for merging two documents and for pruning text that stopped being true. Writing without it produces text that has to be redone, creating without it produces the twenty-sixth document, and deleting without it loses the invariant that was worth keeping. Also use whenever a doc or comment might contradict the current code, whenever a document describes work that already shipped, whenever two documents look like they cover the same subject, and when closing a problem. Triggers on "documentá", "dejá documentado", "actualizá la doc", "está desactualizado", "no coincide con el código", "esto ya no sirve", "limpiá la documentación", "ya lo hicimos", "borralo", "creá un documento", "dónde va esto", "fusionalos", "esto ya está en otro lado", "write it down", "update the docs", "document what you changed", "is this doc stale", "this is obsolete", "clean up the docs", "we already did this", "create a doc for this", "where should this go", "merge these", "why is this so hard to debug".
 ---
 
 # Work protocol (hi-claude)
@@ -46,6 +46,33 @@ paths, crossing tables by hand, a timeout indistinguishable from an empty result
 and its improvement enters the ROADMAP. Register the idea even when it is not implemented now. The
 cheaper the system is to read, the more effective every session becomes.
 
+## Where it BELONGS
+
+The BELONGING axis: the Constitution defines the principle, here is how a destination gets decided.
+
+**Before writing, the destination question comes first.** A content can be true, well written and
+still useful — satisfying every other axis — and still land in the wrong document, where nothing
+dislodges it: pruning does not touch it because it is not rotten.
+
+| What you have in hand | Where it goes |
+|---|---|
+| what is MISSING | `docs/ROADMAP.md`, and the context it carries dies with its item |
+| what EXISTS now | the live picture, corrected in place |
+| what a session opens EVERY time | the root of `docs/`, declared one by one in CLAUDE.md |
+| everything else | the ONE context document — a new file is the LAST option |
+
+**Creating a document is the last option, not the first.** What comes up goes into an existing one.
+A subfolder is only born once one subject already HAS several documents, and then CLAUDE.md declares
+the folder as a unit instead of each path.
+
+**The merge order — it does not get reordered:** rescue → verify the content IS in the destination →
+only then delete. Measured: of 4 overlaps an audit called probable, 2 were false, and deleting on the
+report alone lost the only access method to a system's single source. And what gets rescued is rarely
+about the folder it sat in — content lives where it was DISCOVERED, not where it belongs.
+
+**Moving is not pruning.** Carrying something to its home destroys nothing, so the distance rule does
+not hold it back: it can be done in the same turn. Deleting is what waits for closing evidence.
+
 ## How it gets PRUNED
 
 The CURRENCY axis of the method: the Constitution defines the principle, here is how it is executed.
@@ -67,6 +94,10 @@ The procedure, in order — skipping a step is what turns pruning into losing so
 3. **Delete, do not decorate.** It leaves the tree; git keeps it. Not archived, not renamed to
    `-old`, not struck through, not ticked as done. A document marked historical still gets read,
    still costs context, and still has to be ruled on every time someone opens the folder.
+   ⚠️ **"git keeps it" does NOT hold for a file git never tracked.** There is no copy, deleting is
+   irreversible, and the decision stops being hygiene and becomes the user's: ask. Look at the
+   CONTENT first — a generated mirror whose source is still alive loses nothing, an original without
+   a backup is lost whole, and the two look identical in the explorer.
 4. **Correct the index.** A document that leaves and an index that still declares it is a dead
    reference; a document that stays and no index declares is one no session ever opens.
 

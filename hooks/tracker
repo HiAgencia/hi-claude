@@ -44,10 +44,48 @@ esac
 case "$norm" in
   */docs/roadmap.md)
     printf 'closed\n' >> "$size" 2>/dev/null
-    rm -f "$marker" 2>/dev/null; exit 0 ;;
+    rm -f "$marker" 2>/dev/null
+
+    # BELONGING signal. A healthy register OSCILLATES: work comes in, work closes, it goes up and it
+    # goes down. Measured on a project under this method, it went 99.060 -> 853.468 bytes over three
+    # weeks WITHOUT ONE DROP, and only came down by hand.
+    #
+    # Monotony is the signal, not size. The two alternatives were measured and refuted on that same
+    # register: by ITEM parses 0 blocks (`### ` appears zero times in it), and by LINE reaches 40% of
+    # the volume at 800 ch because the rest is mass spread thin. Monotony depends on neither the
+    # format nor the writing style. It fires once and resets, because a signal repeated every turn is
+    # one that gets learnt away.
+    reg="${TMPDIR:-/tmp}/hi-claude-reg-${session}"
+    cur=$(wc -c < "$real" 2>/dev/null | tr -d ' ')
+    if [ -n "$cur" ]; then
+      printf '%s\n' "$cur" >> "$reg" 2>/dev/null
+      ups=0; steps=0; prev=""
+      for s in $(tail -n 5 "$reg" 2>/dev/null); do
+        if [ -n "$prev" ]; then
+          steps=$((steps + 1))
+          [ "$s" -gt "$prev" ] && ups=$((ups + 1))
+        fi
+        prev="$s"
+      done
+      if [ "$steps" -ge 4 ] && [ "$ups" -ge 4 ]; then
+        first=$(tail -n 5 "$reg" 2>/dev/null | head -n 1)
+        dense=$(awk '{ print length($0) " L" NR }' "$real" 2>/dev/null \
+                  | sort -rn | head -3 | awk '{ printf "%s (%s ch) ", $2, $1 }')
+        : > "$reg" 2>/dev/null
+        emit_context PostToolUse "hi-claude: the register only GREW across the last 4 turns that touched it (${first} -> ${cur} bytes). A healthy register oscillates - work comes in, work closes, it goes up and down. The densest lines right now: ${dense}. The context a register carries is TEMPORARY: it lives while its item is OPEN and goes when the item closes. Whatever outlives the item is not pending - it belongs to the context document, and moving it there is not pruning."
+        exit 0
+      fi
+    fi
+    exit 0 ;;
   */docs/estado.md|*/docs/state.md|*claude.md|*/memory/*.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
-  */docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
+  */docs/inventario.md|*/docs/inventory.md|*/docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
+    rm -f "$marker" 2>/dev/null; exit 0 ;;
+  # The context document settles the debt for the same reason the index does: MOVING something to
+  # where it belongs closes the loop exactly as writing a new line would. Without this, carrying
+  # context out of the register left the turn still in debt and the cheapest way out was to add
+  # another line to the register — the accumulation incentive, pointing the wrong way.
+  */docs/contexto.md|*/docs/context.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
   # Correcting the index is what closes the loop after pruning: a document leaves the tree through
   # the shell, which this hook never sees, so without this line a turn that PRUNED stayed in debt and

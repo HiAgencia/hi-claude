@@ -68,24 +68,32 @@ On approval: create the folders, then write from
 - `docs/INDEX.md`
 - `docs/ROADMAP.md` — the register of what is missing
 - `docs/ESTADO.md` (`STATE.md` in English projects) — the live picture of what exists
+- `docs/CONTEXTO.md` (`CONTEXT.md` in English projects) — the default destination for whatever is NOT
+  opened session after session
 
-ROADMAP and STATE start empty on purpose: they fill up as work happens. If git is available and the
-user agrees, offer `git init` + first commit.
+**The root of `docs/` is for what a session opens EVERY time.** Anything else that appears later goes
+into the context document; a subfolder is only born once one subject already has several documents,
+and a new file is the last option. That is what keeps CLAUDE.md declaring four entries instead of
+twenty-five.
 
-## Phase 5 — The inventory (four documents, built ONCE)
+The three start empty on purpose: they fill up as work happens. If git is available and the user
+agrees, offer `git init` + first commit.
+
+## Phase 5 — The inventory (ONE document, built ONCE)
 
 A tool nobody knows about is a tool nobody uses, and a tools table written from memory ages the day it
-is written. Generate `docs/SKILLS.md`, `docs/MCP.md`, `docs/PLUGINS.md` and `docs/TOOLS.md` from
-`templates/<lang>/INVENTORY.template.md` — one template, four fills.
+is written. Generate `docs/INVENTARIO.md` (`INVENTORY.md` in English projects) from
+`templates/<lang>/INVENTORY.template.md`: one document with four sections, because one subject split
+across four files is a cost with nothing on the other side.
 
-What goes in each:
+Where each section is enumerated FROM:
 
-| Document | Enumerate from | `{{INVENTORY_KIND}}` |
-|---|---|---|
-| `SKILLS.md` | the skills listed in THIS session's context | Skills |
-| `MCP.md` | the MCP servers connected in THIS session, tool by tool | MCP |
-| `PLUGINS.md` | `~/.claude/plugins/installed_plugins.json` — read it, do not guess | Plugins |
-| `TOOLS.md` | the native tools available in THIS session | Tools |
+| Section | Enumerate from |
+|---|---|
+| Skills | the skills listed in THIS session's context |
+| MCP | the MCP servers connected in THIS session, tool by tool |
+| Plugins | `~/.claude/plugins/installed_plugins.json` — read it, do not guess |
+| Tools | the native tools available in THIS session |
 
 - **Detail is PROPORTIONAL.** Only what the project uses gets a described block; everything else is a
   name in the available list. A flat inventory where everything is described equally is one nobody
@@ -93,9 +101,9 @@ What goes in each:
 - **Test what earns a block, INTENSIVELY.** This is written once and then stands, so a described tool
   carries what was measured of it AND its observed limit — the limit is what saves the next session.
   What was not tested says so; never write a capability you did not see.
-- `PLUGINS.md` is the one the start-up hook checks: it names anything installed that is not declared
-  there. Names must match what the registry uses, or the drift check fires forever.
-- Propose the four, wait for approval, then write.
+- The Plugins section is the one the start-up hook checks: it names anything installed that is not
+  declared there. Names must match what the registry uses, or the drift check fires forever.
+- Propose it, wait for approval, then write.
 
 ## Phase 6 — Initial memory
 
@@ -109,10 +117,13 @@ decision tree).
 If a CLAUDE.md already exists: do NOT overwrite. Audit it instead (`/hi-claude:audit claude-md`) and
 offer the missing pieces one by one, as explicit diffs:
 
-- the sovereignty declaration in the first block, and the six principles in the method section
+- the sovereignty declaration in the first block, and the seven principles in the method section
 - the `Gotchas` section — what the file tree does NOT say
 - the `docs/ROADMAP.md` + `docs/ESTADO.md` pair, and the "Start here" reference to them
-- the four inventory documents (Phase 5) — offer them even when everything else is in place
+- the inventory document (Phase 5) — offer it even when everything else is in place. If the project
+  already carries `SKILLS.md` / `MCP.md` / `PLUGINS.md` / `TOOLS.md` as separate files, offer to MERGE
+  them into one, in this order: rescue → verify the content IS in the destination → only then delete.
+  Never the other way round: measured, of 4 overlaps an audit called probable, 2 were false
 - the memory section, the tools table, and the docs index reference
 
 ## Tone

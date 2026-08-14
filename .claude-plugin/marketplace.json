@@ -9,8 +9,8 @@
   "plugins": [
     {
       "name": "hi-claude",
-      "description": "A working method for Claude Code: six principles on three axes with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work that survives compaction, text that gets pruned when it stops being true, subagents that investigate and never decide, an inventory of what the project can use, and a turn that does not end with the register stale.",
-      "version": "3.1.0",
+      "description": "A working method for Claude Code: seven principles on four axes with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work that survives compaction, every content with a declared destination instead of a new file, text that gets pruned when it stops being true, subagents that investigate and never decide, an inventory of what the project can use, and a turn that does not end with the register stale.",
+      "version": "3.2.0",
       "source": "./",
       "category": "productivity",
       "tags": ["method", "memory", "roadmap", "claude-md", "subagents", "best-practices", "organization", "onboarding", "espanol"]

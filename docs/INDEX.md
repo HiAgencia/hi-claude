@@ -20,4 +20,4 @@
 ## Para tu propio proyecto
 
 Este índice documenta el PLUGIN. Lo que el plugin genera en tu proyecto —`CLAUDE.md`, `docs/INDEX.md`,
-el registro, la foto viva y los cuatro inventarios— lo arma `/hi-claude:setup`.
+el registro, la foto viva, el inventario y el documento de contexto— lo arma `/hi-claude:setup`.

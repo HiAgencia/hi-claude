@@ -2,7 +2,7 @@
 # {{PROJECT_NAME}}
 
 > **hi-claude governs this work** — the format, the practice, the retroactivity of every session.
-> Its six principles, their three axes (admission, writing and currency) and the hierarchy that
+> Its seven principles, their four axes (admission, belonging, writing and currency) and the hierarchy that
 > resolves conflicts between them arrive on their own at every start. Where form, criterion or scope
 > is in doubt, hi-claude decides.
 

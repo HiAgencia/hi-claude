@@ -166,6 +166,34 @@ if [ "$tool" = "Bash" ]; then
   esac
 fi
 
+# --------------------------------------- 3b. deleting what git does NOT keep
+# "It leaves the tree and git keeps it" is what makes pruning safe to do. It does not hold for a file
+# git never tracked: there is no copy, deleting is irreversible, and a generated mirror looks exactly
+# like an irreplaceable original in the explorer. So the decision stops being hygiene and becomes the
+# user's. Files that ARE tracked pass untouched - that is the common case and it stays frictionless.
+#
+# LIMIT: paths are read as whitespace-separated tokens, so a destination whose name carries spaces and
+# reaches here unquoted is not recognised. It fails towards NOT asking; the tracked-file check below
+# is what keeps the frequent case honest.
+if [ "$tool" = "Bash" ]; then
+  case "$command" in
+    *rm\ *|*"Remove-Item"*|*unlink\ *)
+      unsaved=""
+      for cand in $command; do
+        case "$cand" in -*|rm|unlink|Remove-Item|\|*|\&*|\;*) continue ;; esac
+        cand=$(printf '%s' "$cand" | tr -d '"'\''')
+        [ -e "$cand" ] || continue
+        is_temp "$cand" && continue
+        git -C "$(dirname "$cand")" ls-files --error-unmatch -- "$cand" >/dev/null 2>&1 \
+          || unsaved="${unsaved}${cand} "
+      done
+      if [ -n "$unsaved" ]; then
+        emit_decision ask "hi-claude: git does not track this, so there is NO copy and deleting is irreversible - the rule 'it leaves the tree, git keeps it' does not cover it: ${unsaved}. Look at the CONTENT before confirming: a generated mirror whose source is still alive loses nothing, an original without a backup is lost whole, and the two look identical in the explorer."
+        exit 0
+      fi ;;
+  esac
+fi
+
 # ------------------------------------------------- 4. governed files (anyone)
 writes=""
 case "$tool" in
@@ -197,15 +225,63 @@ $all_paths
 EOF
 
 if [ -n "$governed" ]; then
-  emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change."
+  # A memory that does not exist yet is the moment MERGING is still cheap. Measured on a project under
+  # this method: 63 memories, 48 of them `feedback`, with seven stating one rule against seven
+  # different objects. The neighbours are named by shared word - crude on purpose, because the cost of
+  # naming one too many is a line, and the cost of naming none is memory number 64.
+  extra=""
+  real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
+  case "$(norm "$real")" in
+    */memory/*.md)
+      if [ -n "$real" ] && [ ! -f "$real" ]; then
+        dir=$(dirname "$real")
+        base=$(basename "$real" .md)
+        near=""
+        for w in $(printf '%s' "$base" | tr '-' '\n' | awk 'length($0)>=4'); do
+          for other in "$dir"/*.md; do
+            [ -f "$other" ] || continue
+            ob=$(basename "$other" .md)
+            [ "$ob" = "$base" ] && continue
+            [ "$ob" = "MEMORY" ] && continue
+            case "$ob" in
+              *"$w"*) case " $near " in *" $ob "*) ;; *) near="${near}${ob} " ;; esac ;;
+            esac
+          done
+        done
+        [ -n "$near" ] && extra=" This memory does not exist yet. MERGING beats adding and creating a new one is the LAST option - these already share a word with it: ${near}. Open them first: if one already carries the rule, extend THAT one instead."
+      fi ;;
+  esac
+  emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change.${extra}"
   exit 0
 fi
 
 # ------------------------------------------------------------ 5. markdown nudge
 # Short on purpose: it rides along on every doc write.
+#
+# The BELONGING map rides along too, but ONLY when the destination does not exist yet. Writing into a
+# document already declared emits nothing: a signal that shows up on ordinary work is one that gets
+# learnt away, and creating a file is the only moment where the destination is still free. The map is
+# what EXISTS under docs/, not what an index declares - a session can only reuse what is really there.
 case "$(norm "$target")" in
   *.md|*.md\ *|*.md\"*|*.md\'*)
-    emit_context PreToolUse "hi-claude: written work here is TIMELESS and NON-CONDITIONING - no dates, no \"for now\", no verdict that closes a door (ceiling, impossible, definitive), and no doc that turns into a chronicle. OBJECTIVE: the fact with its evidence, never a grade or an attributed cause. A measured result is a datum with its N, reopenable. Full rules: the hi-claude:work-protocol skill."
+    map=""
+    real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
+    if [ -n "$real" ] && [ ! -e "$real" ]; then
+      docs="$(printf '%s' "$cwd" | sed 's#\\\\#\\#g' | tr '\\' '/' | sed 's#//*#/#g')/docs"
+      if [ -d "$docs" ]; then
+        dests=""
+        for f in "$docs"/*.md; do
+          [ -f "$f" ] || continue
+          dests="${dests}docs/$(basename "$f") "
+        done
+        for d in "$docs"/*/; do
+          [ -d "$d" ] || continue
+          dests="${dests}docs/$(basename "$d")/ "
+        done
+        [ -n "$dests" ] && map=" CREATING a document is the LAST option - what comes up goes into an existing one, and any pair that can be merged is merged. Destinations already here: ${dests}. What is not opened session after session is CONTEXT and lives together in ONE place. If none of these owns it, say why in one line and declare the new file in CLAUDE.md in this same turn: a document the orchestrator does not name is one no session opens."
+      fi
+    fi
+    emit_context PreToolUse "hi-claude: written work here is TIMELESS and NON-CONDITIONING - no dates, no \"for now\", no verdict that closes a door (ceiling, impossible, definitive), and no doc that turns into a chronicle. OBJECTIVE: the fact with its evidence, never a grade or an attributed cause. A measured result is a datum with its N, reopenable. Full rules: the hi-claude:work-protocol skill.${map}"
     ;;
 esac
 
