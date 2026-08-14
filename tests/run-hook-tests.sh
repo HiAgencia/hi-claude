@@ -437,6 +437,20 @@ printf '# Plugins\n\n- alpha-tool: a thing\n- beta-tool: another\n' > "$inv/docs
 out=$(CLAUDE_CONFIG_DIR="$inv/cfg" bash "$ROOT/hooks/session-start" < "$fi_" 2>/dev/null)
 printf '%s' "$out" | grep -qF "Inventory drift" \
   && ko "inventory: in sync, no noise" "$out" || ok "inventory: in sync, no noise"
+# The MERGED inventory is one document with a section per class, and it wins over the older split
+# files. Without this case the whole new path was exercised by hand and by nothing else - the checks
+# above all run through PLUGINS.md, which is the path a project generated before the merge still has.
+rm -f "$inv/docs/PLUGINS.md"
+printf '# Inventario\n\n## Plugins\n\n- alpha-tool: a thing\n' > "$inv/docs/INVENTARIO.md"
+out=$(CLAUDE_CONFIG_DIR="$inv/cfg" bash "$ROOT/hooks/session-start" < "$fi_" 2>/dev/null)
+printf '%s' "$out" | grep -qF "beta-tool" \
+  && ok "inventory: the merged document is read too" \
+  || ko "inventory: the merged document is read too" "$out"
+# The heading names the file it actually read: a drift notice pointing at a document the project does
+# not have sends the session to correct the wrong one.
+printf '%s' "$out" | grep -qF "Inventory drift (docs/INVENTARIO.md)" \
+  && ok "inventory: the notice names the document it read" \
+  || ko "inventory: the notice names the document it read" "$out"
 rm -rf "$inv" "$fi_"
 
 # --- delegation: the protocol arrives at the dispatch and at the RETURN ---
