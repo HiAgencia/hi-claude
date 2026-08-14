@@ -7,6 +7,19 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FIX="$ROOT/tests/fixtures"
 pass=0; fail=0
 
+# ONE run at a time. The bench shares a scratch dir and session-keyed markers in the temp dir, so two
+# concurrent runs overwrite each other's state - measured, they produced 20 and 7 failures against
+# 172/0 in isolation, and that red is indistinguishable from a real regression. `mkdir` is the atomic
+# test-and-set every POSIX shell has; aborting loudly beats reporting a failure that is not there.
+LOCK="${TMPDIR:-/tmp}/hi-claude-bench.lock"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  printf 'ABORT  another run of this bench is already in progress (%s).\n' "$LOCK"
+  printf '       It shares scratch state, so running two at once reports red that is not a regression.\n'
+  printf '       Wait for it to finish, or remove that directory if no run is alive.\n'
+  exit 2
+fi
+trap 'rm -rf "$LOCK" 2>/dev/null' EXIT INT TERM
+
 ok()  { printf 'PASS  %s\n' "$1"; pass=$((pass+1)); }
 ko()  { printf 'FAIL  %s\n      got: %s\n' "$1" "$(printf '%s' "$2" | head -c 300)"; fail=$((fail+1)); }
 
@@ -602,6 +615,28 @@ for lang in es en; do
   rm -rf "$proj" "$f"
 done
 
+# --- an open-work block past the budget SAYS it was cut ---
+# Measured across five real registers on disk: two of them overflow (4.836 and 5.860 chars), so their
+# block reaches the session cut and the session cannot tell. A trailing marker reads as a formality -
+# what makes it actionable is saying the rest did NOT arrive, so it is not answered by reading harder.
+proj=$(mktemp -d); mkdir -p "$proj/docs"
+# The filler must NOT be headings: session-start strips them before deciding there is substance, so a
+# block made only of `###` lines injects nothing and the check would pass for the wrong reason.
+{ echo "# ROADMAP"; echo '<!-- hi-claude:en-curso -->'; echo "## 1. EN CURSO"; echo "### An item"
+  awk 'BEGIN{ while (i++ < 80) print "Falta: open work that keeps going on and on and on and on." }'
+  echo '<!-- /hi-claude:en-curso -->'; } > "$proj/docs/ROADMAP.md"
+f=$(fixture_with_cwd session-start.json "$proj")
+check "session-start: an oversized open-work block says it was cut" session-start "$f" contains "THE REST DID NOT ARRIVE"
+rm -rf "$proj" "$f"
+
+# A block that FITS must carry no notice: a warning on ordinary work is one that gets learnt away.
+proj=$(mktemp -d); mkdir -p "$proj/docs"
+{ echo "# ROADMAP"; echo '<!-- hi-claude:en-curso -->'; echo "### One item"
+  echo "Falta: one line."; echo '<!-- /hi-claude:en-curso -->'; } > "$proj/docs/ROADMAP.md"
+f=$(fixture_with_cwd session-start.json "$proj")
+check "session-start: a block that fits carries no cut notice" session-start "$f" notcontains "THE REST DID NOT ARRIVE"
+rm -rf "$proj" "$f"
+
 # --- memory signal: a DURABLE preference reaches the protocol, a one-off does not ---
 # Measured: `memory-protocol` carries the literal phrasings in its description and mp-s-03 still scored
 # 0/4 with median 0 - stable, not variance. The negatives below are the harness's own traps, built from
@@ -758,11 +793,17 @@ case "$(printf '%s' "$ROOT" | tr '[:upper:]' '[:lower:]')" in
   *)
 MP="$ROOT/tests/.belonging-tmp"; mkdir -p "$MP/docs"
 grow() { awk -v n="$1" 'BEGIN{ while (i++ < n) printf "x" }' > "$MP/docs/ROADMAP.md"; }
+# The counter is keyed by the REGISTER's path, not by the session, so the bench has to clear it the
+# same way - clearing a session-keyed name would leave state behind and make the NEXT check inherit it.
+MKEY=$(printf '%s' "$MP/docs/ROADMAP.md" | tr '\\' '/' | sed 's#//*#/#g' \
+         | tr '[:upper:]' '[:lower:]' | cksum | tr -cd '0-9' | cut -c1-16)
+MREG="${TMPDIR:-/tmp}/hi-claude-reg-${MKEY}"
+mclear() { rm -f "$MREG" "${MREG}.sec" "${MREG}.sec.now" 2>/dev/null; }
 mwrite() {
-  printf '{"session_id":"MONOSESS","cwd":"%s","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"%s/docs/ROADMAP.md","content":"x"},"tool_response":{}}' \
-    "$MP" "$MP" | bash "$ROOT/hooks/tracker" 2>/dev/null
+  printf '{"session_id":"%s","cwd":"%s","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"%s/docs/ROADMAP.md","content":"x"},"tool_response":{}}' \
+    "${1:-MONOSESS}" "$MP" "$MP" | bash "$ROOT/hooks/tracker" 2>/dev/null
 }
-rm -f "${TMPDIR:-/tmp}/hi-claude-reg-MONOSESS"
+mclear
 out=""
 for n in 400 800 1200 1600 2000; do grow "$n"; out=$(mwrite); done
 printf '%s' "$out" | grep -qF "only GREW" \
@@ -772,15 +813,49 @@ printf '%s' "$out" | grep -qF "permissionDecision" \
   && ko "belonging: the monotony signal never blocks" "$out" \
   || ok "belonging: the monotony signal never blocks"
 # A register that OSCILLATES is the healthy one: work comes in, work closes. It must stay silent.
-rm -f "${TMPDIR:-/tmp}/hi-claude-reg-MONOSESS"
+mclear
 out=""
 for n in 400 800 1200 900 1300; do grow "$n"; out=$(mwrite); done
 printf '%s' "$out" | grep -qF "only GREW" \
   && ko "belonging: a register that oscillates stays silent" "$out" \
   || ok "belonging: a register that oscillates stays silent"
+
+# Monotony is a property of the FILE, not of one conversation. Keyed by session it demanded five
+# writes to the register inside ONE session - measured across five real registers on disk, none ever
+# emitted, and the largest reached 530.624 ch with the signal never firing. Five DIFFERENT sessions
+# is the case that was impossible before and is the whole point of the key.
+mclear
+out=""
+for n in 400 800 1200 1600 2000; do grow "$n"; out=$(mwrite "SESS-$n"); done
+printf '%s' "$out" | grep -qF "only GREW" \
+  && ok "belonging: the monotony counter survives across sessions" \
+  || ko "belonging: the monotony counter survives across sessions" "$out"
+
+# WHAT the signal names. The three densest LINES were measured at 1,2% of a 530.624 ch register and
+# naming the BIGGEST section emitted on 5 of 5 real registers, pointing at `2. Pendientes` (66%) in a
+# register of pending work. Where the growth LANDED is the question monotony is actually asking.
+mclear
+gsec() {
+  { echo "# ROADMAP"; echo "## 1. Motor"; echo "one open line";
+    echo "## 2. Contexto del hilo";
+    awk -v n="$1" 'BEGIN{ while (i++ < n) print "context that outlived its own item" }';
+    echo "## 3. Negocio"; echo "another line"; } > "$MP/docs/ROADMAP.md"
+}
+out=""
+for n in 1 20 40 60 80; do gsec "$n"; out=$(mwrite); done
+printf '%s' "$out" | grep -qF "2. Contexto del hilo" \
+  && ok "belonging: the signal names the section the growth landed in" \
+  || ko "belonging: the signal names the section the growth landed in" "$out"
+printf '%s' "$out" | grep -qF "3. Negocio" \
+  && ko "belonging: it names where growth landed, not every section" "$out" \
+  || ok "belonging: it names where growth landed, not every section"
+
+mclear
 rm -rf "$MP"
-rm -f "${TMPDIR:-/tmp}/hi-claude-reg-MONOSESS" "${TMPDIR:-/tmp}/hi-claude-turn-MONOSESS" \
-      "${TMPDIR:-/tmp}/hi-claude-size-MONOSESS"
+rm -f "${TMPDIR:-/tmp}/hi-claude-turn-MONOSESS" "${TMPDIR:-/tmp}/hi-claude-size-MONOSESS"
+for n in 400 800 1200 1600 2000; do
+  rm -f "${TMPDIR:-/tmp}/hi-claude-turn-SESS-$n" "${TMPDIR:-/tmp}/hi-claude-size-SESS-$n" 2>/dev/null
+done
     ;;
 esac
 
@@ -794,6 +869,23 @@ grep -qF "CURRENT sits above BELONGS" "$ROOT/skills/memory-protocol/constitution
 grep -qF "MOVING IS NOT PRUNING" "$ROOT/hooks/closer" \
   && ok "closer: asks what is not in its place" \
   || ko "closer: asks what is not in its place" "missing"
+
+# The lock is what keeps a concurrent run from reporting red that is not a regression. While THIS run
+# holds it, a second mkdir has to fail - that is the whole guarantee.
+if mkdir "$LOCK" 2>/dev/null; then
+  rmdir "$LOCK" 2>/dev/null
+  ko "bench: a second run cannot start while this one holds the lock" "the lock was not held"
+else
+  ok "bench: a second run cannot start while this one holds the lock"
+fi
+
+# The register key must NEVER fall back to the session: that is the unreachable threshold this key
+# exists to remove, and it would come back without failing loudly.
+if grep -A2 'cksum' "$ROOT/hooks/tracker" | grep -qF 'key="$session"'; then
+  ko "tracker: the key fallback stays keyed by the register" "it falls back to the session"
+else
+  ok "tracker: the key fallback stays keyed by the register"
+fi
 
 # The turn markers are session-scoped state in the temp dir. A test bench that leaves its own state
 # behind makes the NEXT run start dirty, and a closer that finds a stale marker blocks for nothing.

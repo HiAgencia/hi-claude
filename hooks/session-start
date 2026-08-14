@@ -68,9 +68,15 @@ if [ -f "$roadmap" ]; then
     | grep -v '^[[:space:]]*\*(.*)\*[[:space:]]*$' \
     | tr -d '[:space:]')
   if [ -n "$substance" ]; then
+    # Overflow is SAID, not just marked. Measured across five real registers on disk, two of them
+    # overflow (4.836 and 5.860 chars): their open-work block arrives cut and the session cannot tell,
+    # because a trailing marker reads as a formality. The number is what makes it actionable - and the
+    # cause is almost never big work: it is a fourth item, or context that outlived its own item.
     if [ "${#open_work}" -gt "$MAX_ROADMAP_CHARS" ]; then
+      full=${#open_work}
       open_work="${open_work:0:$MAX_ROADMAP_CHARS}
-[truncated — open docs/ROADMAP.md for the rest]"
+
+[hi-claude: this block is ${full} chars and only the first ${MAX_ROADMAP_CHARS} reached this session — THE REST DID NOT ARRIVE, so what is missing from here is not answered by reading harder. A block that overflows is not big work: it is more than three items, or context that outlived the item it was written under. Open docs/ROADMAP.md, and moving what no longer belongs is what makes the rest arrive.]"
     fi
     payload="${payload}
 

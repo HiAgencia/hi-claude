@@ -55,10 +55,43 @@ case "$norm" in
     # the volume at 800 ch because the rest is mass spread thin. Monotony depends on neither the
     # format nor the writing style. It fires once and resets, because a signal repeated every turn is
     # one that gets learnt away.
-    reg="${TMPDIR:-/tmp}/hi-claude-reg-${session}"
+    #
+    # The counter is keyed by the REGISTER, not by the session. Keyed by session it demanded FIVE
+    # writes to the register INSIDE ONE session - measured across five real registers on disk, none of
+    # them ever emitted, and the largest reached 530.624 ch with the signal never firing. Monotony is
+    # a property of the file ACROSS sessions, so its counter has to outlive one.
+    # `cksum` emits "<crc> <bytes>", and keeping BOTH digits runs means a collision needs the same
+    # CRC32 *and* the same path length. If the binary is missing, the fallback stays keyed by the
+    # REGISTER - falling back to the session would silently restore the unreachable threshold this
+    # key exists to fix, and a guarantee that degrades without saying so is the failure mode being
+    # designed out here.
+    key=$(printf '%s' "$norm" | cksum 2>/dev/null | tr -cd '0-9' | cut -c1-16)
+    [ -n "$key" ] || key=$(printf '%s' "$norm" | tr -c 'a-z0-9' '-' | tail -c 60)
+    reg="${TMPDIR:-/tmp}/hi-claude-reg-${key}"
+    # Per-section snapshot, taken when the window OPENS. Naming the biggest section was measured on
+    # the five real registers and emitted on 5 of 5, pointing at `2. Pendientes` (66%) in a register
+    # of pending work: with a handful of sections the largest one holds a quarter by arithmetic, so
+    # that is structure, not signal. What GREW inside the window answers where the growth came from,
+    # which is the question monotony is asking.
+    sections() {
+      awk '/^## /{ h=$0; sub(/^##[[:space:]]*/,"",h); next }
+           h!=""{ b[h]+=length($0)+1 }
+           END{ for (k in b) printf "%d\t%s\n", b[k], k }' "$1" 2>/dev/null
+    }
+    snap="${reg}.sec"
     cur=$(wc -c < "$real" 2>/dev/null | tr -d ' ')
     if [ -n "$cur" ]; then
+      [ -s "$reg" ] || sections "$real" > "$snap" 2>/dev/null
       printf '%s\n' "$cur" >> "$reg" 2>/dev/null
+      # Twenty writes without the signal means the register oscillates, which is the healthy shape.
+      # Start a FRESH window - samples and snapshot together - instead of trimming the samples alone:
+      # trimming leaves the snapshot older than the samples it gets compared against, and the deltas
+      # would then span a different period than the "first -> cur" the message reports.
+      lines=$(wc -l < "$reg" 2>/dev/null | tr -d ' ')
+      if [ -n "$lines" ] && [ "$lines" -gt 20 ]; then
+        printf '%s\n' "$cur" > "$reg" 2>/dev/null
+        sections "$real" > "$snap" 2>/dev/null
+      fi
       ups=0; steps=0; prev=""
       for s in $(tail -n 5 "$reg" 2>/dev/null); do
         if [ -n "$prev" ]; then
@@ -69,10 +102,22 @@ case "$norm" in
       done
       if [ "$steps" -ge 4 ] && [ "$ups" -ge 4 ]; then
         first=$(tail -n 5 "$reg" 2>/dev/null | head -n 1)
-        dense=$(awk '{ print length($0) " L" NR }' "$real" 2>/dev/null \
-                  | sort -rn | head -3 | awk '{ printf "%s (%s ch) ", $2, $1 }')
-        : > "$reg" 2>/dev/null
-        emit_context PostToolUse "hi-claude: the register only GREW across the last 4 turns that touched it (${first} -> ${cur} bytes). A healthy register oscillates - work comes in, work closes, it goes up and down. The densest lines right now: ${dense}. The context a register carries is TEMPORARY: it lives while its item is OPEN and goes when the item closes. Whatever outlives the item is not pending - it belongs to the context document, and moving it there is not pruning."
+        # WHAT GETS NAMED is where the growth landed, not the densest lines. Measured on a 530.624 ch
+        # register: its three densest lines are 6.542 ch (1,2%) and its twenty longest 6,7%, because
+        # the mass sits in hundreds of medium lines - naming them cannot move the file.
+        top=""
+        if [ -s "$snap" ]; then
+          sections "$real" > "${snap}.now" 2>/dev/null
+          top=$(awk -F'\t' '
+            NR==FNR { old[$2]=$1; next }
+            { d=$1 - (($2 in old) ? old[$2] : 0); if (d>0) printf "%d\t%s\n", d, $2 }' \
+            "$snap" "${snap}.now" 2>/dev/null | sort -rn | head -2 \
+            | awk -F'\t' '{ printf "%s%.70s (+%d ch)", (NR>1 ? "; " : ""), $2, $1 }')
+          rm -f "${snap}.now" 2>/dev/null
+        fi
+        [ -n "$top" ] && top=" That growth landed in: ${top}."
+        : > "$reg" 2>/dev/null; rm -f "$snap" 2>/dev/null
+        emit_context PostToolUse "hi-claude: the register only GREW across the last 4 turns that touched it (${first} -> ${cur} bytes). A healthy register oscillates - work comes in, work closes, it goes up and down.${top} The context a register carries is TEMPORARY: it lives while its item is OPEN and goes when the item closes. Whatever outlives the item is not pending - it belongs to the context document, and moving it there is not pruning. Read that section before proposing anything: a section can be large and entirely alive, and what decides is whether its content is still OPEN WORK."
         exit 0
       fi
     fi
