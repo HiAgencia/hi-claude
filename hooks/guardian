@@ -172,21 +172,35 @@ fi
 # like an irreplaceable original in the explorer. So the decision stops being hygiene and becomes the
 # user's. Files that ARE tracked pass untouched - that is the common case and it stays frictionless.
 #
-# LIMIT: paths are read as whitespace-separated tokens, so a destination whose name carries spaces and
-# reaches here unquoted is not recognised. It fails towards NOT asking; the tracked-file check below
-# is what keeps the frequent case honest.
+# QUOTED SEGMENTS FIRST, then the rest. Splitting the whole command on whitespace breaks any path
+# carrying spaces - which on Windows is the common case, not the edge one - and the damage is not that
+# it stays silent: a fragment of the broken path can still match something that exists, so the ask
+# fires naming the WRONG token. Measured on this very repo, whose path carries spaces: the notice
+# named `\` instead of the file, asking the user to inspect something it could not name.
 if [ "$tool" = "Bash" ]; then
   case "$command" in
     *rm\ *|*"Remove-Item"*|*unlink\ *)
       unsaved=""
-      for cand in $command; do
+      # The payload carries JSON-ESCAPED quotes, so the command reads `rm \"a b\"`. Matching quoted
+      # segments against that grabs the backslash instead of the path - and `[ -e "\" ]` resolves to
+      # the drive root, which EXISTS, so the ask fired naming `\`. Un-escape first, then parse.
+      cmd=$(printf '%s' "$command" | sed 's/\\"/"/g')
+      quoted=$(printf '%s' "$cmd" | grep -oE '"[^"]+"|'"'"'[^'"'"']+'"'"'' | sed 's/^.//;s/.$//')
+      rest=$(printf '%s' "$cmd" | sed -E 's/"[^"]*"//g; s/'"'"'[^'"'"']*'"'"'//g')
+      while IFS= read -r cand; do
+        [ -n "$cand" ] || continue
         case "$cand" in -*|rm|unlink|Remove-Item|\|*|\&*|\;*) continue ;; esac
-        cand=$(printf '%s' "$cand" | tr -d '"'\''')
+        # A token made only of separators is not a path: on Windows `\` IS the drive root and passes
+        # `-e`, which is what turned a broken parse into a confident wrong answer.
+        case "$(printf '%s' "$cand" | tr -d '\\/. ')" in "") continue ;; esac
         [ -e "$cand" ] || continue
         is_temp "$cand" && continue
         git -C "$(dirname "$cand")" ls-files --error-unmatch -- "$cand" >/dev/null 2>&1 \
           || unsaved="${unsaved}${cand} "
-      done
+      done <<EOF
+$quoted
+$(printf '%s' "$rest" | tr ' \t' '\n\n')
+EOF
       if [ -n "$unsaved" ]; then
         emit_decision ask "hi-claude: git does not track this, so there is NO copy and deleting is irreversible - the rule 'it leaves the tree, git keeps it' does not cover it: ${unsaved}. Look at the CONTENT before confirming: a generated mirror whose source is still alive loses nothing, an original without a backup is lost whole, and the two look identical in the explorer."
         exit 0
@@ -266,7 +280,11 @@ case "$(norm "$target")" in
   *.md|*.md\ *|*.md\"*|*.md\'*)
     map=""
     real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
-    if [ -n "$real" ] && [ ! -e "$real" ]; then
+    # A TEMPORARY destination is not a project document, so it gets no destination map. Measured in a
+    # real session: creating a scratch `.md` under the session scratchpad brought the whole map, which
+    # is the exact shape of noise this signal was built to avoid - one that shows up on ordinary work
+    # is one that gets learnt away.
+    if [ -n "$real" ] && [ ! -e "$real" ] && ! is_temp "$real"; then
       docs="$(printf '%s' "$cwd" | sed 's#\\\\#\\#g' | tr '\\' '/' | sed 's#//*#/#g')/docs"
       if [ -d "$docs" ]; then
         dests=""

@@ -70,6 +70,17 @@ archivos es un costo sin contraparte, y el auditor propone la fusión cuando enc
   descarta TODO el frontmatter: la skill sigue resolviendo por nombre de directorio pero el modelo ya
   no puede dispararla, y nada falla ruidosamente. Los agentes usan `description: |`, que es inmune por
   construcción. El banco lo chequea en las 12 componentes.
+- **Un valor JSON no se lee "hasta la próxima comilla": puede llevar comillas ESCAPADAS.** Medido: con
+  ese patrón, todo comando de Bash con comillas llegaba truncado en el primer `\"`, y un comando
+  truncado no matchea ninguna regla — el hook calla, y el silencio se lee igual que "no hay nada que
+  decidir". Tres garantías quedaban evadidas con solo entrecomillar el comando: el `ask` sobre
+  CLAUDE.md, el `ask` sobre memoria y el `deny` de escritura de un subagente. Sobrevivió al banco, al
+  validador y a la verificación pre-push porque TODOS los casos de Bash del banco eran sin comillas.
+  Se des-escapa solo `\"`: los paths de Windows llegan con backslashes dobles y varios puntos del
+  código los colapsan por su cuenta.
+- **Un token de separadores puros pasa el test de existencia.** En Windows `\` ES la raíz del drive, así
+  que `[ -e ]` da verdadero: un parseo roto que deja `\` como candidato no falla ruidosamente, produce
+  una respuesta segura de sí misma sobre el archivo equivocado.
 - **Los matchers son un regex SIN anclar contra el nombre de la tool.** Por eso `Edit` cubre
   `MultiEdit` y `Task` cubre `TaskCreate` — y por eso `Write` atrapa `TodoWrite`, que el Guardián
   exime explícitamente: un todo de sesión no es un artefacto del proyecto.

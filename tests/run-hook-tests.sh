@@ -602,10 +602,38 @@ for lang in es en; do
   rm -rf "$proj" "$f"
 done
 
+# --- json_str: a value carrying ESCAPED QUOTES is not truncated ---
+# Measured: reading the value as "up to the next quote" cut every Bash command that carried quotes,
+# and a truncated command matches no rule. Three guarantees were evaded by merely quoting the command
+# — the ask on CLAUDE.md, the ask on memory, and the subagent write block — and the bench never saw it
+# because every Bash case it had was unquoted. These four are the regression that keeps it closed.
+qask() {
+  printf '{"session_id":"S","cwd":"/c/proj","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$1" \
+    | bash "$ROOT/hooks/guardian" 2>/dev/null
+}
+printf '%s' "$(qask 'echo \"una regla\" >> CLAUDE.md')" | grep -qF '"ask"' \
+  && ok "json_str: a QUOTED bash write to CLAUDE.md still asks" \
+  || ko "json_str: a QUOTED bash write to CLAUDE.md still asks" "quoting the command evaded the guarantee"
+printf '%s' "$(qask 'echo \"dato\" >> /c/Users/x/.claude/projects/p/memory/n.md')" | grep -qF '"ask"' \
+  && ok "json_str: a QUOTED bash write to memory still asks" \
+  || ko "json_str: a QUOTED bash write to memory still asks" "quoting the command evaded the guarantee"
+out=$(printf '{"session_id":"S","agent_id":"sub-1","cwd":"/c/proj","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo \\"x\\" > /c/proj/src/app.py"}}' \
+  | bash "$ROOT/hooks/guardian" 2>/dev/null)
+printf '%s' "$out" | grep -qF '"deny"' \
+  && ok "json_str: a QUOTED subagent write is still denied" \
+  || ko "json_str: a QUOTED subagent write is still denied" "$out"
+# The unquoted path must keep working: the fix un-escapes only \" and leaves \\ alone, because Windows
+# paths arrive with doubled backslashes and several call sites collapse them themselves.
+printf '%s' "$(qask 'echo x >> CLAUDE.md')" | grep -qF '"ask"' \
+  && ok "json_str: the unquoted path still asks" \
+  || ko "json_str: the unquoted path still asks" "the fix broke what already worked"
+
 # --- belonging: the destination map rides on CREATION only ---
 # The negative matters as much as the positive: a signal that shows up on every doc write is one that
 # gets learnt away, and writing into an already-declared destination is ordinary work.
-bproj=$(mktemp -d); mkdir -p "$bproj/docs/motor"
+# NOT under the temp dir: a temporary destination gets no map by design, so building the fixture there
+# would make every check below pass for the wrong reason.
+bproj="$HOME/hi claude maptest"; rm -rf "$bproj"; mkdir -p "$bproj/docs/motor"
 printf 'x\n' > "$bproj/docs/ROADMAP.md"
 printf 'x\n' > "$bproj/docs/CONTEXTO.md"
 bwrite() {
@@ -633,23 +661,32 @@ printf '%s' "$out" | grep -qF "LAST option" \
 printf '%s' "$out" | grep -qF "TIMELESS" \
   && ok "belonging: the writing rules still ride along" \
   || ko "belonging: the writing rules still ride along" "$out"
+# A TEMPORARY destination is not a project document. Measured in a real session: a scratch `.md` under
+# the session scratchpad brought the whole map, which is the shape of noise this signal must avoid.
+out=$(bwrite "${TMPDIR:-/tmp}/scratchpad/nota-suelta.md")
+printf '%s' "$out" | grep -qF "LAST option" \
+  && ko "belonging: a temporary destination gets no map" "$out" \
+  || ok "belonging: a temporary destination gets no map"
 rm -rf "$bproj"
 
 # --- belonging: deleting what git does NOT keep ---
 # A tracked file passes with no friction; an untracked one has no copy, so the call is the user's.
 #
-# The scratch repo canNOT live under $ROOT (this plugin is developed under a path WITH SPACES, and the
-# hook reads the command as whitespace-separated tokens) nor under the temp dir (the hook treats any
-# temporary destination as not-a-project-artefact and skips it by design). $HOME satisfies both.
-dproj="$HOME/.hi-claude-deltest"
+# The scratch repo carries SPACES in its name ON PURPOSE. An earlier version of this bench used a
+# space-free path because that was the one where the hook worked - which is choosing the case that
+# passes over the case that runs. On Windows a path with spaces is the common case, and the failure it
+# produced was not silence: a fragment of the broken path matched, and the notice named `\` instead of
+# the file. It cannot live under the temp dir either: the hook skips temporary destinations by design.
+dproj="$HOME/hi claude deltest"
 rm -rf "$dproj" 2>/dev/null; mkdir -p "$dproj"
 if git -C "$dproj" init -q >/dev/null 2>&1; then
   printf 'kept\n' > "$dproj/kept.md"
   git -C "$dproj" add kept.md >/dev/null 2>&1
   git -C "$dproj" -c user.email=t@t -c user.name=t commit -qm init >/dev/null 2>&1
   printf 'scrap\n' > "$dproj/scrap.md"
+  # QUOTED, which is how a shell receives a path with spaces in the first place.
   delcmd() {
-    printf '{"session_id":"TESTSESS","cwd":"%s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm %s"}}' \
+    printf '{"session_id":"TESTSESS","cwd":"%s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm \\"%s\\""}}' \
       "$dproj" "$1" | bash "$ROOT/hooks/guardian" 2>/dev/null
   }
   out=$(delcmd "$dproj/scrap.md")
@@ -659,6 +696,11 @@ if git -C "$dproj" init -q >/dev/null 2>&1; then
   printf '%s' "$out" | grep -qF '"ask"' \
     && ok "belonging: it asks the user, it does not deny" \
     || ko "belonging: it asks the user, it does not deny" "$out"
+  # Firing is not enough: the notice has to NAME the file. Asking the user to look at the CONTENT of
+  # something it cannot name is a prompt they can only answer blind.
+  printf '%s' "$out" | grep -qF "scrap.md" \
+    && ok "belonging: the notice names the file, even with spaces in the path" \
+    || ko "belonging: the notice names the file, even with spaces in the path" "$out"
   out=$(delcmd "$dproj/kept.md")
   printf '%s' "$out" | grep -qF "NO copy" \
     && ko "belonging: deleting a tracked file passes" "$out" \
