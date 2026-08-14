@@ -33,7 +33,7 @@ hooks/            hooks.json + run-hook.cmd (polyglot) + json-lib + one script p
                   bookkeeping) and `report-received` (a subagent's report just came back)
 skills/           memory-protocol (+ constitution, references), roadmap (+ references),
                   work-protocol, delegation, seeding-doubts, setup (+ templates es/en), audit
-agents/           read-only auditors (CLAUDE.md, memory, organization, ROADMAP, inventory)
+agents/           read-only auditors (CLAUDE.md, memory, organization, ROADMAP, inventory, currency)
 BRAND/            Hi Agencia logo (white = dark mode, dark = light mode, used by README)
 docs/             ROADMAP.md, ESTADO.md, INDEX.md
 tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
@@ -61,7 +61,7 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 | skill: delegation | Dispatching a subagent, and again when its report comes back |
 | skill: seeding-doubts | Stuck on quality, or right after closing a big block |
 | skill: setup | Bootstrapping CLAUDE.md / docs / register / inventory from the es/en templates |
-| skill: audit (+ its five auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization and inventory; run before each release |
+| skill: audit (+ its six auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization, inventory and currency; run before each release |
 | `bash tests/run-hook-tests.sh` | After ANY change to a hook, a template marker, or the doctrine |
 | `claude plugin validate .claude-plugin/plugin.json` | After changing manifests, hooks, skills or agents. **Point it at the plugin.json, NOT at the directory**: given the directory it validates only the marketplace manifest and returns ✔ with a dead skill inside |
 | `plugin-dev` (agent `plugin-validator`) | Deeper structural review before a release, when the CLI check is not enough |

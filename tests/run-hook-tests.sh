@@ -602,6 +602,44 @@ for lang in es en; do
   rm -rf "$proj" "$f"
 done
 
+# --- memory signal: a DURABLE preference reaches the protocol, a one-off does not ---
+# Measured: `memory-protocol` carries the literal phrasings in its description and mp-s-03 still scored
+# 0/4 with median 0 - stable, not variance. The negatives below are the harness's own traps, built from
+# the SAME words as the positives; they are what makes this narrow instead of greedy.
+psig() {
+  printf '{"session_id":"S","hook_event_name":"UserPromptSubmit","prompt":"%s"}' "$1" \
+    | bash "$ROOT/hooks/prompt-signals" 2>/dev/null
+}
+mem_pos=0
+for q in 'No me gusta que uses tablas tan largas, preferi listas de ahora en mas' \
+         'Recorda que jamas se hace deploy los viernes' \
+         'Si, exactamente asi - siempre valide los emails con ese regex' \
+         'Para la proxima, los reportes me los das en una sola pagina' \
+         'From now on, never commit without asking me first' \
+         'Nunca mas uses node 16 aca, quedamos en node 20'; do
+  printf '%s' "$(psig "$q")" | grep -qF 'DURABLE preference' && mem_pos=$((mem_pos + 1))
+done
+[ "$mem_pos" -ge 6 ] && ok "memory signal: durable preferences reach the protocol ($mem_pos/6)" \
+                     || ko "memory signal: durable preferences reach the protocol" "only $mem_pos/6"
+mem_false=0
+for q in 'No me gusta como quedo este parrafo, reescribilo' \
+         'Recordame manana revisar el PR' \
+         'Siempre que veas un error de tipos mostrame el stack completo... digo, en este debug de ahora nomas' \
+         'Te acordas de que hicimos en la sesion de ayer?' \
+         'Corre los tests con --verbose esta vez' \
+         'Guarda este archivo en la carpeta docs'; do
+  printf '%s' "$(psig "$q")" | grep -qF 'DURABLE preference' && mem_false=$((mem_false + 1))
+done
+[ "$mem_false" -eq 0 ] && ok "memory signal: one-off requests stay silent (0 false fires)" \
+                       || ko "memory signal: one-off requests stay silent" "$mem_false false fires"
+# The two signals share a hook and must not bleed into each other.
+printf '%s' "$(psig 'algo anda mal y no se que')" | grep -qF 'DURABLE preference' \
+  && ko "memory signal: a stall does not raise the memory protocol" "signals bleed" \
+  || ok "memory signal: a stall does not raise the memory protocol"
+printf '%s' "$(psig 'Para la proxima, los reportes en una pagina')" | grep -qF 'seeding-doubts' \
+  && ko "memory signal: a preference does not raise the doubts protocol" "signals bleed" \
+  || ok "memory signal: a preference does not raise the doubts protocol"
+
 # --- json_str: a value carrying ESCAPED QUOTES is not truncated ---
 # Measured: reading the value as "up to the next quote" cut every Bash command that carried quotes,
 # and a truncated command matches no rule. Three guarantees were evaded by merely quoting the command

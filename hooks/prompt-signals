@@ -30,6 +30,24 @@ if printf '%s' "$lower" | grep -Eq \
   'algo anda mal|no s[eé] qu[eé] (pasa|est|hay)|estamos estancad|seguimos estancad|no mejora (nada|nunca)|qu[eé] se nos (est[aá] )?escapa|revis[aá] todo de nuevo|no se puede|es imposible|no hay (forma|manera|caso)|nada funciona|we.?re stuck|are we missing|something.?s off|nothing is improving|take another look|it (can.?t|cannot) be done|no way to do'
 then
   emit_context UserPromptSubmit "hi-claude: this reads as a quality stall or a closed verdict, and it has a protocol. There is no \"it cannot be done\" - there is an angle not tried yet. Do NOT answer with a conclusion: use the hi-claude:seeding-doubts skill to manufacture the angle. Its deliverable is MORE DOUBTS with their evidence, ordered by damage x cost, whatever is already shipped first; every checkable one gets verified on the spot, and a doubt refuted WITH data is worth as much as a confirmed one."
+  exit 0
+fi
+
+# A preference stated in passing is the same shape of miss, measured: `memory-protocol` carries the
+# literal phrasings in its description and one of them still scored 0/4 with median 0 - stable, not
+# variance. Confirming something mid-conversation has no decision point where a skill feels required.
+#
+# NARROW ON PURPOSE, and the dataset says why: the negatives are traps built from the SAME words as the
+# positives - "no me gusta cómo quedó este párrafo" against "no me gusta que uses tablas largas, de
+# ahora en más"; "recordame mañana" against "recordá que jamás"; "siempre que veas un error… digo, en
+# este debug nomás" against "explicame siempre sin jerga". The difference is DURABLE vs one-off, which
+# is semantic, so only the unambiguously durable forms are matched here. Measured on the harness's own
+# 20 queries: 8/10 positives, 0/10 false fires. The two it does not reach (a user profile and a project
+# datum) carry no durable marker at all - a description is what has to catch those.
+if printf '%s' "$lower" | grep -Eq \
+  'de ahora en m[aá]s|de aqu[ií] en (m[aá]s|adelante)|para la pr[oó]xima|nunca m[aá]s|record[aá] que|qued[oa]mos en|me corrijo|tenelo presente|ten[ée]lo en cuenta|from now on|for next time|never again|i prefer that|going forward|s[ií],? exactamente|perfecto,? as[ií]|yes,? exactly'
+then
+  emit_context UserPromptSubmit "hi-claude: this reads as a DURABLE preference, limit or correction - not a one-off request. It has a protocol: hi-claude:memory-protocol. Classify it against the admission axis (PREFERENTIAL, LIMITING, TIMELESS), and if it qualifies PROPOSE the exact memory before writing anything - persistent memory and CLAUDE.md never change without the user's explicit approval, and a guard enforces it. If it does NOT qualify, say nothing about it and carry on: a one-off instruction is not memory. Creating a new memory is the LAST option - if one already carries the rule, extend THAT one."
 fi
 
 exit 0
