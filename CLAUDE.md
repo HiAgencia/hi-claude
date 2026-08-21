@@ -62,6 +62,7 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 | skill: seeding-doubts | Stuck on quality, or right after closing a big block |
 | skill: setup | Bootstrapping CLAUDE.md / docs / register / inventory from the es/en templates |
 | skill: audit (+ its six auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization, inventory and currency; run before each release |
+| skill: update | What this project is NOT using of what the plugin offers. Manual, run after updating. Its panorama is REWRITTEN every release and the bench goes red if it does not name the shipped version — so revisiting it is a condition for shipping, not a step someone recalls |
 | `bash tests/run-hook-tests.sh` | After ANY change to a hook, a template marker, or the doctrine |
 | `claude plugin validate .claude-plugin/plugin.json` | After changing manifests, hooks, skills or agents. **Point it at the plugin.json, NOT at the directory**: given the directory it validates only the marketplace manifest and returns ✔ with a dead skill inside |
 | `plugin-dev` (agent `plugin-validator`) | Deeper structural review before a release, when the CLI check is not enough |

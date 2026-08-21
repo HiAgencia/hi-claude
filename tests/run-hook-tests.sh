@@ -580,6 +580,34 @@ grep -qi "distance rule" "$ROOT/agents/currency-auditor.md" \
   && ok "currency-auditor: spares what the session just produced" \
   || ko "currency-auditor: spares what the session just produced" "missing"
 
+# --- adoption: the panorama names the version it ships with, or it ages in silence ---
+# It is REWRITTEN at every release, never stacked, and what makes that survive a release is not
+# remembering. `plugin.json` declares a version and this goes red if the skill does not name it, so
+# revisiting the panorama becomes a condition for shipping instead of a step somebody recalls — the
+# same mechanic as a ceiling that only goes down: what cannot be forgotten is what breaks the run.
+UPD="$ROOT/skills/update/SKILL.md"
+pv=$(grep -m1 '"version"' "$ROOT/.claude-plugin/plugin.json" \
+     | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')
+if grep -qF "$pv" "$UPD"; then
+  ok "update: the panorama names the version it ships with ($pv)"
+else
+  ko "update: the panorama names the version it ships with" "$pv missing from skills/update/SKILL.md"
+fi
+# If it starts reporting health it IS audit under another name, and the difference in focus is the
+# entire reason it exists. The description has to say so where the model reads it.
+grep -qF "hi-claude:audit" "$UPD" \
+  && ok "update: it says out loud what it is NOT" \
+  || ko "update: it says out loud what it is NOT" "nothing disambiguates it from audit"
+# An item without its measurement is a suggestion, and a suggestion gets read once.
+n=$(grep -c '^\*\*How to measure it here' "$UPD" || true)
+[ "${n:-0}" -ge 3 ] \
+  && ok "update: every item carries how to measure it BY EFFECT ($n)" \
+  || ko "update: every item carries how to measure it BY EFFECT" "only $n"
+# The filter that keeps it from becoming the changelog it replaces.
+grep -qF "asks something OF THE PROJECT" "$UPD" \
+  && ok "update: only what asks something of the project enters" \
+  || ko "update: only what asks something of the project enters" "the filter is not written down"
+
 # --- memory protocol knows BOTH axes ---
 grep -q "WRITING axis" "$ROOT/skills/memory-protocol/SKILL.md" \
   && ok "memory-protocol: applies the writing axis" || ko "memory-protocol: applies the writing axis" "missing"

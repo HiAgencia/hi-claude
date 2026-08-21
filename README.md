@@ -101,6 +101,7 @@ Four skills carry the parts of the craft that are not memory. They load when the
 - **`work-protocol`** — how it gets written down. No verdicts written as final, no "for now", no documentation that turns into a diary. A measured result is a datum with its N, reopenable. Before correcting any text it measures what is TRUE NOW — discovering the project's own test runner, gate and live environment instead of assuming them. And every problem closed leaves the system easier to operate than it was.
 - **`delegation`** — what gets asked of a subagent and what happens to what it brings back. Delegate the looking, never the deciding, and never the change itself. A report is input to your judgement, never a substitute for it.
 - **`seeding-doubts`** — for when quality stalls and nothing looks obviously wrong. Introspection, then three subagents with deliberately different tones whose deliverable is **more doubts, never answers**, then immediate verification of everything checkable. There is no "it can't be done" — there is an angle not tried yet.
+- **`update`** — run it after updating the plugin. Updating changes nothing in your projects on its own, and no other check notices: an audit asks whether your project is healthy, and a project can be perfectly healthy while missing a whole capability. This one asks the other question — of what the plugin offers, what is this project not using — and measures YOURS by effect, with your numbers. It proposes; you decide.
 
 ## What sharp looks like
 
@@ -229,6 +230,7 @@ Cuatro skills cargan las partes del oficio que no son memoria. Se abren cuando e
 - **`work-protocol`** — cómo se deja escrito. Nada de veredictos escritos como finales, nada de "por ahora", nada de documentación que se convierte en diario. Un resultado medido es un dato con su N, reabrible. Antes de corregir un texto mide qué es verdad HOY — descubriendo el runner de tests, el gate y el entorno vivo que el proyecto tenga, en vez de asumirlos. Y cada problema que se cierra deja el sistema más fácil de operar.
 - **`delegation`** — qué se le pide a un subagente y qué se hace con lo que trae. Se delega el MIRAR, nunca el DECIDIR, y jamás el cambio en sí. Un reporte es insumo de tu criterio, nunca un reemplazo.
 - **`seeding-doubts`** — para cuando la calidad se estanca y nada parece estar mal. Introspección, después tres subagentes con tonos deliberadamente distintos cuyo entregable son **más dudas, nunca respuestas**, y después validación inmediata de todo lo verificable. No existe el "no se puede": existe un ángulo que todavía no se probó.
+- **`update`** — se corre después de actualizar el plugin. Actualizar no cambia nada en tus proyectos por sí solo, y ninguna otra pieza lo nota: una auditoría pregunta si tu proyecto está sano, y un proyecto puede estar perfectamente sano y estar desperdiciando una capacidad entera. Ésta hace la otra pregunta —de lo que el plugin ofrece, qué no está usando este proyecto— y mide el TUYO por efecto, con tus números. Propone; decidís vos.
 
 ## Así se ve "afilado"
 

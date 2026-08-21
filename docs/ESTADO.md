@@ -35,8 +35,17 @@ cargado progresivamente.
 | `Stop` | Frena UNA vez el fin de un turno que cambió el sistema, con la demanda ESCALADA al tamaño del cambio: hasta dos archivos pide dos preguntas —qué dejó de ser falso y el registro—, y de ahí para arriba el circuito entero. Pregunta PRIMERO qué dejó de ser verdad por el cambio —y borrarlo cierra el circuito igual que escribir—, SEGUNDO qué no está en su lugar, y después qué falta, sobre los destinos: registro, foto viva, docs, inventario, memoria, CLAUDE.md. Exime lo que el propio turno produjo, salvo la pregunta de lugar: MOVER no es podar, así que no cae bajo la regla de la distancia. Respeta `stop_hook_active`, limpia su marca al frenar y las marcas de consulta del turno. Tras cerrar un bloque grande OFRECE el pre-mortem inverso, sin bloquear |
 | `PreCompact` | Pide volcar lo que quedó a medio hacer antes de comprimir el contexto |
 
-**Siete skills**: `memory-protocol` (+ Constitución y references), `roadmap`, `work-protocol`,
-`delegation`, `seeding-doubts`, `setup` (+ plantillas `es`/`en`), `audit`.
+**Ocho skills**: `memory-protocol` (+ Constitución y references), `roadmap`, `work-protocol`,
+`delegation`, `seeding-doubts`, `setup` (+ plantillas `es`/`en`), `audit`, `update`.
+
+**`update` contesta lo que ninguna otra pieza contesta**: de lo que el plugin ofrece, qué NO está
+usando este proyecto. Es MANUAL —se corre después de actualizar— y no se solapa con `audit`, que
+pregunta si el proyecto está SANO: un registro puede estar perfectamente sano y desperdiciando una
+capacidad entera. Su panorama se REESCRIBE en cada release y nunca se apila, entra sólo lo que le
+pide algo AL PROYECTO, y cada ítem se verifica POR EFECTO sobre el proyecto —contar, abrir, correr—
+en vez de contra un changelog, así que lo ya adoptado se apaga solo y no hace falta saber de qué
+versión venía. Propone; no aplica. ⚠️ Un proyecto que salta varias versiones recibe el panorama
+VIGENTE, no la unión de los deltas que se perdió: es la consecuencia elegida de reescribir.
 
 **Seis agentes auditores** read-only: CLAUDE.md, memoria, organización, ROADMAP, inventario y
 vigencia. Reportan la MEDICIÓN con su evidencia, nunca una calificación, y cierran citando su límite
