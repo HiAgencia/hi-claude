@@ -29,10 +29,10 @@ cargado progresivamente.
 | `UserPromptSubmit` | Detecta en el prompt las frases de estancamiento o de veredicto cerrado y trae el protocolo de dudas. Deliberadamente angosto: "este test falla, arreglalo" y "me falta una dependencia" no lo disparan |
 | `SessionStart` (`startup·resume·clear·compact·fork`) | Inyecta la Constitución; el bloque de trabajo abierto del registro, que busca en el directorio y un nivel adentro —con varios candidatos los nombra en vez de elegir, y si el bloque pasa el presupuesto DICE que el resto no llegó, con su tamaño—; los TÍTULOS de la documentación declarada, para que un protocolo referenciado por path no quede invisible; y el drift del inventario de plugins. Solo inyecta contenido REAL |
 | `SubagentStart` | Inyecta el rol dentro del subagente: investiga y nunca decide; puede leer, inspeccionar, testear y medir; su entregable son hipótesis y cierra con la cita del límite, textual |
-| `PreToolUse` (escrituras, Bash, delegación y `mcp__.*`) | Para un SUBAGENTE: `deny` a escribir fuera de un destino temporal por cualquier tool, a Bash fuera de una allowlist de lectura y runners de test, a toda tool MCP que no declare en su nombre que LEE, y a delegar el trabajo. Sin escape por variable de entorno. Para el PRINCIPAL: al despachar, el protocolo de delegación; y el aviso de background en trabajos largos. Para CUALQUIERA: `ask` si la escritura toca CLAUDE.md o la memoria, incluida la vía Bash —y ahí, si la memoria es NUEVA, nombra las que ya comparten una palabra con ella, porque fusionar es lo barato antes de escribir—; `ask` si un borrado toca algo que git NO trackea, porque no hay copia y la vara "git lo conserva" no aplica; y las reglas de redacción en toda escritura de markdown, con el MAPA DE DESTINOS solo cuando el archivo todavía no existe |
-| `PostToolUse` (escrituras) | Registra si el turno tocó el sistema y su tamaño; escribir el registro, la foto viva, el inventario, el documento de contexto, el índice de documentación, CLAUDE.md o la memoria salda la deuda —el índice y el contexto están en la lista porque un documento sale del árbol por la terminal y MOVER algo a su lugar cierra el circuito igual que escribir, y sin eso podar o mudar dejaba la deuda intacta—. Al escribir en `plans/` o `specs/` avisa, sin bloquear, si algún vecino sigue con casillas sin marcar: un plan abierto por vez. Y al escribir el registro mide su MONOTONÍA: cuatro turnos que lo tocaron sin que baje una sola vez emiten la señal, nombrando la SECCIÓN donde aterrizó ese crecimiento. El contador es por REGISTRO y no por sesión, porque la monotonía es una propiedad del archivo ENTRE sesiones |
+| `PreToolUse` (escrituras, Bash, delegación y `mcp__.*`) | Para un SUBAGENTE: `deny` a escribir fuera de un destino temporal por cualquier tool, a Bash fuera de una allowlist de lectura y runners de test, a toda tool MCP que no declare en su nombre que LEE, y a delegar el trabajo. Sin escape por variable de entorno. Para el PRINCIPAL: al despachar, el protocolo de delegación; y el aviso de background en trabajos largos. Para CUALQUIERA: `ask` si la escritura toca CLAUDE.md o la memoria. Por Bash eso se decide por el DESTINO de un operador de escritura, nunca por el texto del comando —`git` no edita contenido y una mención en un mensaje de commit no es una escritura—; la única excepción es un intérprete, que escribe desde adentro de su propio código y ahí la mención es todo lo que hay. La consulta es UNA por TURNO: en CLAUDE.md porque se exige el cambio en UNA escritura, y en memoria porque cubre el LOTE que la primera consulta listó. Si la memoria es NUEVA, nombra las que ya comparten una palabra con ella, porque fusionar es lo barato antes de escribir. También `ask` si un borrado toca algo que git NO trackea, porque no hay copia y la vara "git lo conserva" no aplica; y las reglas de redacción en toda escritura de markdown, con el MAPA DE DESTINOS solo cuando el archivo todavía no existe |
+| `PostToolUse` (escrituras) | Registra si el turno tocó el sistema y su tamaño; escribir el registro —reconocido donde VIVE, bajo `docs/` o en la raíz del repo, con `node_modules` afuera—, la foto viva, el inventario, el documento de contexto, el índice de documentación, CLAUDE.md o la memoria salda la deuda —el índice y el contexto están en la lista porque un documento sale del árbol por la terminal y MOVER algo a su lugar cierra el circuito igual que escribir, y sin eso podar o mudar dejaba la deuda intacta—. Al escribir en `plans/` o `specs/` avisa, sin bloquear, si algún vecino sigue con casillas sin marcar: un plan abierto por vez. Y al escribir el registro mide su MONOTONÍA: cuatro turnos que lo tocaron sin que baje una sola vez emiten la señal, nombrando la SECCIÓN donde aterrizó ese crecimiento. El contador es por REGISTRO y no por sesión, porque la monotonía es una propiedad del archivo ENTRE sesiones |
 | `PostToolUse` (`Agent·Task·Workflow`) | Al volver un reporte: es una hipótesis, se verifica de primera mano antes de que algo se apoye en ella |
-| `Stop` | Frena UNA vez el fin de un turno que cambió el sistema. Pregunta PRIMERO qué dejó de ser verdad por el cambio —y borrarlo cierra el circuito igual que escribir—, SEGUNDO qué no está en su lugar, y después qué falta, sobre los destinos: registro, foto viva, docs, inventario, memoria, CLAUDE.md. Exime lo que el propio turno produjo, salvo la pregunta de lugar: MOVER no es podar, así que no cae bajo la regla de la distancia. Respeta `stop_hook_active` y limpia su marca al frenar. Tras cerrar un bloque grande OFRECE el pre-mortem inverso, sin bloquear |
+| `Stop` | Frena UNA vez el fin de un turno que cambió el sistema, con la demanda ESCALADA al tamaño del cambio: hasta dos archivos pide dos preguntas —qué dejó de ser falso y el registro—, y de ahí para arriba el circuito entero. Pregunta PRIMERO qué dejó de ser verdad por el cambio —y borrarlo cierra el circuito igual que escribir—, SEGUNDO qué no está en su lugar, y después qué falta, sobre los destinos: registro, foto viva, docs, inventario, memoria, CLAUDE.md. Exime lo que el propio turno produjo, salvo la pregunta de lugar: MOVER no es podar, así que no cae bajo la regla de la distancia. Respeta `stop_hook_active`, limpia su marca al frenar y las marcas de consulta del turno. Tras cerrar un bloque grande OFRECE el pre-mortem inverso, sin bloquear |
 | `PreCompact` | Pide volcar lo que quedó a medio hacer antes de comprimir el contexto |
 
 **Siete skills**: `memory-protocol` (+ Constitución y references), `roadmap`, `work-protocol`,
@@ -97,6 +97,42 @@ archivos es un costo sin contraparte, y el auditor propone la fusión cuando enc
   ejecuta código arbitrario —escribe lo que quiera— y no matcheaba ningún verbo de escritura. Por eso
   tanto la política de Bash como la de MCP son ALLOWLIST de lectura: lo que no declara que lee, se
   deniega. Es el lado seguro de lo desconocido.
+- **Que un comando NOMBRE un archivo gobernado no es que lo escriba, y unir las dos coincidencias
+  sueltas cuesta el 97% de las consultas.** Medido sobre transcripts reales: 285 comandos Bash
+  llegaron a esa decisión y 8 escribían el archivo — 277 de más, 254 encabezados por `cd` y 14 por
+  `git`. Bastaba un `>` en cualquier parte para declarar que el comando escribía, y un `2>/dev/null`
+  o el `<noreply@anthropic.com>` de un trailer de commit lo aportan solos. Sondeado por efecto,
+  `git log -- CLAUDE.md > hist.txt` y `git diff CLAUDE.md | tee d.txt` pedían permiso siendo LECTURA.
+  ⚠️ Y el arreglo que destapó esto es el mismo que cerró tres evasiones: mientras `json_str` cortaba
+  el comando en la primera comilla escapada, el guardián no veía un `git commit` entrecomillado — no
+  estaba bien, estaba ciego.
+- **En el lote de memorias, el HOOK garantiza la CONSULTA y el MODELO sostiene el CONTENIDO.** Lo que
+  el código asegura es que la primera memoria del turno abre un diálogo que pide la lista completa, y
+  que sin ese diálogo aprobado ninguna otra pasa. Lo que NO compara nada es si la memoria número tres
+  estaba en esa lista: eso lo sostiene el modelo, avisado en cada una de las siguientes. La distinción
+  importa porque el resto de esta pieza sí es por código, y leerla toda igual promete de más.
+- **Un comando de LECTURA con un flag de ESCRITURA es un comando de escritura.** La allowlist de Bash
+  del subagente admite linters y runners por su SUBCOMANDO, y varios reescriben el fuente cuando se
+  les pide: medido, `cargo clippy --fix`, `npm run lint -- --fix` y `gradle check --write-locks`
+  pasaban la contención mientras editaban el proyecto. El subcomando no es todo el contrato.
+- **`sed` escribe sólo con `-i`.** Listarlo entero entre los que mutan convirtió `sed -n '83p' CLAUDE.md`
+  —una LECTURA— en un pedido de confirmación: la misma confusión entre mencionar y escribir, un nivel
+  más abajo, y apareció midiendo 691 comandos reales contra el hook nuevo.
+- **UN COMANDO NO ES UN COMANDO, y decidir sobre el string entero le atribuye a un operador los
+  argumentos de otra sentencia.** Medido en uso real: un `rm` de un lockfile bajo el directorio
+  temporal levantó el aviso de borrado irreversible nombrando la RAÍZ DEL PROYECTO, que aparecía en
+  una asignación de variable tres sentencias después. El `rm` estaba bien; lo que nombró, no — y un
+  aviso que nombra lo equivocado es peor que ninguno, porque pide mirar algo que no es. Por eso tanto
+  el gobernado como el borrado parten en SEGMENTOS y leen sólo los argumentos del segmento que muta.
+- **`git ls-files --error-unmatch` sobre un DIRECTORIO siempre falla, aunque esté entero trackeado.**
+  No es un pathspec que ese comando pueda matchear, así que preguntando así toda carpeta existente
+  sale "sin copia" — medido sobre un repo que git venía cargando desde su primer commit. Un directorio
+  cuenta como guardado cuando git trackea ALGO adentro.
+- **Un turno que reanuda una tarea de fondo no emite `Stop`.** Límite conocido y acotado: medido con
+  la semántica real del marcador —que es por SESIÓN y no por turno—, la deuda se ARRASTRA y el 81% de
+  los bloqueos llega igual en el turno que la generó; 13 de 62 sesiones terminan con deuda sin cobrar,
+  mediana 1 archivo, máximo 4, 21 en total. Cobrar en `UserPromptSubmit` queda descartado con ese dato.
+  Se reabre si la proporción de turnos reanudados sube muy por encima del 35,5% medido (N = 3.038).
 
 ## Superficies declaradas
 

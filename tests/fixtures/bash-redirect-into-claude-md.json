@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","session_id":"TESTSESS","prompt_id":"TURN1","tool_name":"Bash","tool_input":{"command":"git log --oneline > \"C:\\\\Users\\\\Ten\\\\mi proyecto\\\\CLAUDE.md\""}}

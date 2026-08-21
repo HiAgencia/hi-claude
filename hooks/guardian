@@ -24,6 +24,10 @@ agent_id=$(json_str "$input" agent_id)
 file_path=$(json_str "$input" file_path)
 command=$(json_str "$input" command)
 cwd=$(json_str "$input" cwd)
+session=$(json_str "$input" session_id)
+# The TURN key. Present on the common input fields; when it is absent the per-turn consultation
+# degrades to per-write, which is the safe direction and is asserted by the bench.
+prompt_id=$(json_str "$input" prompt_id)
 
 DENY="hi-claude: a subagent investigates - it never decides what gets done and never touches the project's artefacts. Report what you saw as a HYPOTHESIS with its evidence (file:line). The main agent that dispatched you reads it, verifies it first-hand and makes the change."
 
@@ -38,11 +42,61 @@ all_paths=$(printf '%s' "$input" \
   | sed 's/.*:[[:space:]]*"\(.*\)"/\1/')
 
 # A destination a subagent may write: clearly temporary, never a project artefact.
+#
+# THE NULL SINK IS NOT A DESTINATION. Discarding output is the opposite of writing, and leaving it out
+# denied every read a subagent could make: measured, `ls`, `cat`, `grep`, `git status` and `find` were
+# all denied the moment they carried `2>/dev/null`, while the same commands without it passed. Under a
+# working method that sends command output to a file or to the void, that is most of what a subagent
+# runs - the containment stayed intact and the investigation it exists to allow did not.
 is_temp() {
   case "$(norm "$1")" in
+    /dev/null|/dev/stdout|/dev/stderr|nul|nul:) return 0 ;;
     /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*/.cache/*|*.tmp) return 0 ;;
   esac
   return 1
+}
+
+# A COMMAND IS NOT ONE COMMAND. `cd X && rm y ; R="Z"` is three, and a decision taken over the whole
+# string attributes one segment's operator to another segment's arguments. Measured in real use: a
+# `rm` of a lock file in the temp dir raised the untracked-delete notice naming the PROJECT ROOT,
+# which appeared in a variable assignment three statements later.
+#
+# The payload carries JSON-ESCAPED quotes, so quoted arguments read as `\"a b\"`. Un-escape first or
+# every quoted path is parsed with its backslash and matches nothing that exists.
+# A separator INSIDE quotes is text, not a separator. Splitting on it fabricates a segment that was
+# never a command: measured, `echo "cuidado con | rm CLAUDE.md adentro"` produced a phantom `rm`
+# segment and asked for confirmation to delete a file nothing was deleting.
+segments_of() {
+  printf '%s' "$1" | sed 's/\\"/"/g' | awk -v SQ="'" '
+    {
+      n = length($0); s = ""; q = 0; qc = ""
+      for (i = 1; i <= n; i++) {
+        c = substr($0, i, 1)
+        if (q) { s = s c; if (c == qc) q = 0; continue }
+        if (c == "\"" || c == SQ) { q = 1; qc = c; s = s c; continue }
+        if (c == ";") { print s; s = ""; continue }
+        if (c == "|") { if (substr($0, i + 1, 1) == "|") i++; print s; s = ""; continue }
+        if (c == "&" && substr($0, i + 1, 1) == "&") { i++; print s; s = ""; continue }
+        s = s c
+      }
+      print s
+    }'
+}
+
+# Split respecting quotes: paths carry spaces (this plugin is developed under one), and splitting on
+# whitespace alone turns one path into two tokens that match nothing.
+tokens_of() {
+  printf '%s' "$1" \
+    | grep -oE '"[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+' \
+    | sed -e 's/^"//; s/"$//' -e "s/^'//; s/'\$//"
+}
+
+# The ARGUMENTS of a segment: its head and its flags are not paths.
+args_of() {
+  tokens_of "$1" | { read -r _head; while IFS= read -r t; do
+    case "$t" in -*|"") continue ;; esac
+    printf '%s\n' "$t"
+  done; }
 }
 
 # ---------------------------------------------------------------- 1. subagent
@@ -101,6 +155,15 @@ EOF
 $extra
 EOF
       [ -n "$matched" ] && continue
+      # A READ COMMAND WITH A WRITE FLAG IS A WRITE COMMAND. The allowlist admits linters and test
+      # runners by their SUBCOMMAND, and several of them rewrite the source when asked: measured,
+      # `cargo clippy --fix`, `npm run lint -- --fix` and `gradle check --write-locks` all passed
+      # the subagent containment while editing the project. The subcommand is not the whole contract.
+      case " $seg " in
+        *" --fix"*|*" --write"*|*" -w "*|*" --apply"*|*" --in-place"*|*" --save"*|*" --force"*|\
+        *" --write-locks"*|*" --update-snapshot"*|*" -u "*|*" --overwrite"*)
+          bad="yes"; continue ;;
+      esac
       # shellcheck disable=SC2086
       set -- $seg
       case "${1:-}" in
@@ -123,7 +186,7 @@ EOF
         *) bad="yes" ;;
       esac
     done <<EOF
-$(printf '%s' "$command" | tr ';|&' '\n')
+$(segments_of "$command")
 EOF
     [ -n "$bad" ] && { emit_decision deny "$DENY"; exit 0; }
     exit 0
@@ -181,25 +244,39 @@ if [ "$tool" = "Bash" ]; then
   case "$command" in
     *rm\ *|*"Remove-Item"*|*unlink\ *)
       unsaved=""
-      # The payload carries JSON-ESCAPED quotes, so the command reads `rm \"a b\"`. Matching quoted
-      # segments against that grabs the backslash instead of the path - and `[ -e "\" ]` resolves to
-      # the drive root, which EXISTS, so the ask fired naming `\`. Un-escape first, then parse.
-      cmd=$(printf '%s' "$command" | sed 's/\\"/"/g')
-      quoted=$(printf '%s' "$cmd" | grep -oE '"[^"]+"|'"'"'[^'"'"']+'"'"'' | sed 's/^.//;s/.$//')
-      rest=$(printf '%s' "$cmd" | sed -E 's/"[^"]*"//g; s/'"'"'[^'"'"']*'"'"'//g')
+      # ONLY the arguments of a DELETING segment. Scanning the whole command attributes the `rm` to
+      # tokens that belong to other statements: measured in real use, deleting a lock file under the
+      # temp dir raised this notice naming the PROJECT ROOT, which sat in a later variable assignment.
+      cands=""
+      while IFS= read -r seg; do
+        [ -n "$seg" ] || continue
+        # shellcheck disable=SC2086
+        set -- $seg
+        case "${1:-}" in
+          rm|unlink|del|Remove-Item) cands="${cands}$(args_of "$seg")
+" ;;
+        esac
+      done <<SEGMENTS
+$(segments_of "$command")
+SEGMENTS
       while IFS= read -r cand; do
         [ -n "$cand" ] || continue
-        case "$cand" in -*|rm|unlink|Remove-Item|\|*|\&*|\;*) continue ;; esac
         # A token made only of separators is not a path: on Windows `\` IS the drive root and passes
         # `-e`, which is what turned a broken parse into a confident wrong answer.
         case "$(printf '%s' "$cand" | tr -d '\\/. ')" in "") continue ;; esac
         [ -e "$cand" ] || continue
         is_temp "$cand" && continue
-        git -C "$(dirname "$cand")" ls-files --error-unmatch -- "$cand" >/dev/null 2>&1 \
-          || unsaved="${unsaved}${cand} "
+        # A DIRECTORY is never a pathspec `ls-files --error-unmatch` can match, so asking that way
+        # reports every tracked directory as untracked. Measured: it named a repo root that git has
+        # carried for its whole history. A directory counts as saved when git tracks anything inside.
+        if [ -d "$cand" ]; then
+          [ -n "$(git -C "$cand" ls-files 2>/dev/null | head -n 1)" ] && continue
+        else
+          git -C "$(dirname "$cand")" ls-files --error-unmatch -- "$cand" >/dev/null 2>&1 && continue
+        fi
+        unsaved="${unsaved}${cand} "
       done <<EOF
-$quoted
-$(printf '%s' "$rest" | tr ' \t' '\n\n')
+$cands
 EOF
       if [ -n "$unsaved" ]; then
         emit_decision ask "hi-claude: git does not track this, so there is NO copy and deleting is irreversible - the rule 'it leaves the tree, git keeps it' does not cover it: ${unsaved}. Look at the CONTENT before confirming: a generated mirror whose source is still alive loses nothing, an original without a backup is lost whole, and the two look identical in the explorer."
@@ -209,36 +286,121 @@ EOF
 fi
 
 # ------------------------------------------------- 4. governed files (anyone)
-writes=""
+# WHAT COUNTS AS WRITING A GOVERNED FILE. For Write/Edit/NotebookEdit the destination is explicit and
+# the test is exact. For Bash there is no file_path, and testing the command TEXT confuses MENTIONING
+# a file with WRITING it. Measured over real transcripts: 285 commands reached this branch and 8 of
+# them wrote the file - 277 false positives (97,2%), 254 of them headed by `cd` and 14 by `git`. Two
+# loose matches were ANDed - any `>` anywhere meant "this writes" - and a `2>/dev/null` or the
+# `<noreply@anthropic.com>` of a commit trailer supplies the `>`. `git log -- CLAUDE.md > hist.txt`
+# and `git diff CLAUDE.md | tee d.txt` both asked, and both are READS.
+#
+# So Bash is decided by the DESTINATION of a write operator. `git` cannot edit file content, and a
+# mention inside a commit message is not a write. The one case a destination cannot express - an
+# interpreter writing from inside its own code - keeps asking on the mention, because there the target
+# is not in the text and narrowing it would be a guarantee that turns off without saying so.
+governed_path() {
+  case "$(norm "$1")" in
+    *claude.md|*claude.local.md|*memory.md)  return 0 ;;
+    */.claude/projects/*/memory/*.md)        return 0 ;;
+  esac
+  return 1
+}
+
+# Every destination a Bash command writes to. One per line, empty when it writes nothing.
+bash_write_targets() {
+  local cmd seg head
+  cmd=$(printf '%s' "$1" | sed 's/\\"/"/g')
+
+  # A redirection destination counts whatever the command is: `git log > CLAUDE.md` overwrites it.
+  # `2>&1` is excluded by the class - the char after `>` may not be `&`, which is what makes a
+  # stderr merge stop counting as a write.
+  printf '%s' "$cmd" \
+    | grep -oE '[0-9]?>>?[[:space:]]*("[^"]*"|'"'"'[^'"'"']*'"'"'|[^ &|;<>()]+)' \
+    | sed -E 's/^[0-9]?>>?[[:space:]]*//' \
+    | sed -e 's/^"//; s/"$//' -e "s/^'//; s/'\$//"
+
+  while IFS= read -r seg; do
+    [ -n "$seg" ] || continue
+    # shellcheck disable=SC2086
+    set -- $seg
+    head="${1:-}"
+    case "$head" in
+      # The destination is an ARGUMENT, not a redirection. Testing every token is deliberate: the
+      # flag order is the caller's and a positional destination has no marker to anchor on.
+      # `sed` writes ONLY with -i. Measured over 691 real commands, listing it unconditionally made
+      # `sed -n '83p' CLAUDE.md` - a READ - ask for confirmation, which is the same mention-vs-write
+      # confusion one level down.
+      sed)
+        case " $seg " in *" -i"*) tokens_of "$seg" ;; esac ;;
+      # `patch` and `xargs` earn their place by measurement, not by symmetry: both write a governed
+      # file with no redirection in sight - `patch CLAUDE.md < d.diff` and `xargs -I{} cp {} CLAUDE.md`
+      # both passed before they were listed here.
+      tee|cp|mv|rm|unlink|truncate|dd|install|ln|patch|xargs|\
+      Set-Content|Add-Content|Out-File|Remove-Item|Move-Item|Copy-Item|New-Item)
+        tokens_of "$seg" ;;
+      # An interpreter writes from inside its own code, where no destination is readable. The mention
+      # is all there is, so the mention is what decides - narrow to interpreters so it stays rare.
+      python|python3|py|node|ruby|perl|php|pwsh|powershell|sh|bash|zsh)
+        case "$(norm "$seg")" in
+          *claude.md*|*claude.local.md*|*memory.md*|*/memory/*.md*) printf '%s\n' "$seg" ;;
+        esac ;;
+    esac
+  done <<SEGMENTS
+$(segments_of "$1")
+SEGMENTS
+}
+
+targets=""
 case "$tool" in
-  Write|Edit|MultiEdit|NotebookEdit) writes="yes" ;;
+  Write|Edit|MultiEdit|NotebookEdit)
+    targets="$file_path
+$all_paths" ;;
   Bash)
-    printf '%s' "$command" \
-      | grep -Eq '>>?[[:space:]]*[^ &|]|\btee\b|\bsed\b[^|]*-i|\bSet-Content\b|\bAdd-Content\b|\bOut-File\b|\btruncate\b' \
-      && writes="yes"
-    ;;
+    targets=$(bash_write_targets "$command") ;;
+  *) exit 0 ;;
 esac
-[ -n "$writes" ] || exit 0
+[ -n "$(printf '%s' "$targets" | tr -d '[:space:]')" ] || exit 0
 
-target="$file_path"
-[ -z "$target" ] && target="$command"
-[ -z "$target" ] && exit 0
-
-# Read line by line: paths carry spaces (this plugin is developed under one), and word-splitting
-# them would break the directory-shaped patterns below.
+# Read line by line: paths carry spaces, and word-splitting them would break the patterns above.
 governed=""
 while IFS= read -r candidate; do
   [ -n "$candidate" ] || continue
+  # The interpreter branch emits a whole segment, not a path: fall back to the substring test there.
+  if governed_path "$candidate"; then governed="yes"; break; fi
   case "$(norm "$candidate")" in
-    *claude.md*|*claude.local.md*|*memory.md*) governed="yes" ;;
-    *.claude/projects/*/memory/*.md*)          governed="yes" ;;
+    *claude.md*|*claude.local.md*|*memory.md*|*/memory/*.md*)
+      case "$candidate" in *[[:space:]]*) governed="yes"; break ;; esac ;;
   esac
 done <<EOF
-$target
-$all_paths
+$targets
 EOF
 
 if [ -n "$governed" ]; then
+  is_memory=""
+  case "$(norm "$file_path")" in */memory/*.md) is_memory="yes" ;; esac
+
+  # ONE CONSULTATION PER TURN, and the two governed files earn it differently.
+  #
+  # Measured over real transcripts: 311 turns produced 908 consultations and only 121 (38,9%) needed
+  # one. 597 of them (65,7%) were the second or later of the same turn - the worst turn asked 35, and
+  # one turn made 19 separate edits to CLAUDE.md alone.
+  #
+  # CLAUDE.md loses nothing: nineteen fragments are LESS reviewable than the whole file, so the demand
+  # is the change in ONE write and the guarantee stays whole. Memories cannot be merged that way - nine
+  # memories are nine files - so there the consultation covers the BATCH: the first one demands the
+  # whole list up front and the rest of the turn rides it. That is the consultation axis loosened on
+  # purpose, with the user's word, and only for memories.
+  #
+  # The turn key is `prompt_id`. Without it there is no turn to key on, so it degrades to asking every
+  # time - the safe side - and the bench covers BOTH branches, because a guarantee that switches off
+  # without saying so is the exact failure this file exists to prevent.
+  if [ -n "$is_memory" ] && [ -n "$prompt_id" ] && [ -n "$session" ]; then
+    if [ -f "${TMPDIR:-/tmp}/hi-claude-mem-${session}-${prompt_id}" ]; then
+      emit_context PreToolUse "hi-claude: this memory rides the consultation already approved for this turn, which covered a LIST. If this one was not on that list, stop and propose it on its own - approval of a batch is not approval of whatever comes after it. Creating a new memory is still the LAST option: if one already carries the rule, extend THAT one."
+      exit 0
+    fi
+  fi
+
   # A memory that does not exist yet is the moment MERGING is still cheap. Measured on a project under
   # this method: 63 memories, 48 of them `feedback`, with seven stating one rule against seven
   # different objects. The neighbours are named by shared word - crude on purpose, because the cost of
@@ -265,7 +427,11 @@ if [ -n "$governed" ]; then
         [ -n "$near" ] && extra=" This memory does not exist yet. MERGING beats adding and creating a new one is the LAST option - these already share a word with it: ${near}. Open them first: if one already carries the rule, extend THAT one instead."
       fi ;;
   esac
-  emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md / persistent memory). Review and confirm the exact change.${extra}"
+  if [ -n "$is_memory" ]; then
+    emit_decision ask "hi-claude guard: this writes to persistent memory. Review and confirm the exact change. THIS CONSULTATION COVERS THE WHOLE TURN: if you intend to write more memories now, LIST THEM ALL HERE - name and content of each - because the rest of the turn will ride this approval and what was not listed was not approved.${extra}"
+  else
+    emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md). Review and confirm the exact change. APPLY THE WHOLE CHANGE IN ONE WRITE: every separate edit costs the user another confirmation, and nineteen fragments are less reviewable than the file. If more changes to this file remain, compose them and write once.${extra}"
+  fi
   exit 0
 fi
 
@@ -276,8 +442,18 @@ fi
 # document already declared emits nothing: a signal that shows up on ordinary work is one that gets
 # learnt away, and creating a file is the only moment where the destination is still free. The map is
 # what EXISTS under docs/, not what an index declares - a session can only reuse what is really there.
-case "$(norm "$target")" in
-  *.md|*.md\ *|*.md\"*|*.md\'*)
+# The destinations are real paths now, not a command string, so the suffix test is exact - and a
+# markdown file written THROUGH Bash reaches the rules for the first time.
+md=""
+while IFS= read -r candidate; do
+  [ -n "$candidate" ] || continue
+  case "$(norm "$candidate")" in *.md) md="yes"; break ;; esac
+done <<EOF
+$targets
+EOF
+
+case "$md" in
+  yes)
     map=""
     real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
     # A TEMPORARY destination is not a project document, so it gets no destination map. Measured in a

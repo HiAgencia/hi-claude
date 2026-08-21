@@ -44,3 +44,12 @@ Resolved: one line, rewritten, never stacked.
 ## 2. Pending
 
 *(none yet)*
+
+## 3. Horizon — what is not for now
+
+<!-- It does not ride into the session, so it costs nothing per start. Every item carries the
+     CONDITION that brings it into production - a thing that has to become true, never a date.
+     Migrating is MOVING the block into its pending section, which is why it lives in this same file
+     and not in another one. This is not where work that already started gets parked. -->
+
+*(none yet)*

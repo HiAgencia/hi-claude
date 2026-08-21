@@ -8,7 +8,7 @@ description: Use at the start of a session to recover what was in progress, when
 `docs/ROADMAP.md` is the single register of what is MISSING. `docs/ESTADO.md` (`STATE.md` in English
 projects) is the live picture of what EXISTS. Neither keeps a log.
 
-## The seven rules
+## The nine rules
 
 1. **An item is DELETED when it reaches 100%** — never marked done. If closing it changed the state of
    the system, that goes in-place into `ESTADO.md`. The design of what was built lives in the work
@@ -32,6 +32,16 @@ projects) is the live picture of what EXISTS. Neither keeps a log.
 7. **HUBS first, classes not bullets.** An item that unblocks others goes first. Twenty defects sharing
    one root cause are ONE job with one rule that closes them all; taking them one by one fixes the same
    thing three times.
+8. **Work that is not for now lives in the HORIZON of its thematic block**, under a `Horizonte` /
+   `Horizon` heading, and it carries the CONDITION that brings it in — not a date, the thing that has
+   to become true. It stays in the same file: migrating is moving a block, and a second file is a
+   second place where something can expire unseen. The horizon does not ride into the session, so it
+   costs nothing at startup and it is not a place to hide work that already started.
+9. **The register is written so a PIECE can check it**, and what that piece cannot read is a defect of
+   the ITEM. Three invariants, none of them tied to a language: the runnable forms live in the piece
+   and never in the item · what it cannot measure comes back as a THIRD state, never as "open" ·
+   and the count of criteria it cannot read is a ceiling that only goes DOWN. `references/roadmap-anatomy.md`
+   carries the contract and what it costs.
 
 ## When to touch it
 
@@ -43,7 +53,9 @@ projects) is the live picture of what EXISTS. Neither keeps a log.
   finished, use `superpowers:verification-before-completion` when it is installed: evidence before
   assertion, always.
 - **Discovering work** → new item in its thematic block. It only enters the open-work block if it
-  starts now.
+  starts now, and if it is not for this phase at all it goes to the HORIZON of that block, with the
+  condition that brings it in. An open-work block that overflows the session budget is usually this:
+  work that is not starting now, sitting where only work that started belongs.
 
 Native tasks are the mirror of THIS session; the ROADMAP is the truth BETWEEN sessions. The dump goes
 tasks → ROADMAP, never the other way, and never automatically.

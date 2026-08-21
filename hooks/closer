@@ -26,6 +26,10 @@ session=$(json_str "$input" session_id)
 marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
 size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
 
+# The turn's per-consultation marks die with the turn. They are keyed by session AND turn precisely so
+# this line can bound them: without it they accumulate in the temp dir for the life of the machine.
+rm -f "${TMPDIR:-/tmp}/hi-claude-mem-${session}-"* "${TMPDIR:-/tmp}/hi-claude-gov-${session}-"* 2>/dev/null
+
 # A big block just closed is when the inverse pre-mortem pays: what did we NOT look at? Measured,
 # a skill description never fires for this - finishing well feels like nothing needs a skill. So it
 # arrives here, as context, without blocking: doubts are an offer, never an obligation.
@@ -60,6 +64,21 @@ esac
 
 count=$(wc -l < "$marker" 2>/dev/null | tr -d ' ')
 rm -f "$marker" "$size" 2>/dev/null
+
+# THE DEMAND IS SCALED TO THE CHANGE. A seven-step ritual costs the same for a typo as for a refactor,
+# and measured over 563 real blocks that is what it charged: 224 of them (40%) fired over ONE file and
+# 57% over one or two. After a one-file block the turn wrote NOTHING 25% of the time - a median of 6
+# assistant messages and 3 tool calls spent re-auditing to conclude nothing applied. A demand that
+# usually finds nothing is one that gets answered without looking, which costs the guarantee itself.
+#
+# SMALL=2 is where the measurement puts the line: below it the two questions that actually pay, above
+# it the full loop. The number moves with a new measurement of that same distribution, not by feel.
+SMALL=2
+if [ "${count:-0}" -le "$SMALL" ]; then
+  printf '{\n  "decision": "block",\n  "reason": "%s"\n}\n' "$(escape_for_json \
+"hi-claude: this turn changed ${count} file(s) and left the register untouched. Three questions, one line each. (1) WHAT DID THIS MAKE FALSE - the doc, the comment, the rule or the item that describes the flow you just replaced. It gets corrected or DELETED where it lives, and deleting closes the loop exactly as writing does. (2) docs/ROADMAP.md - what is missing now and what is already resolved. (3) IF SOMETHING ELSE CHANGED, its document says so in one line: the live picture when what EXISTS changed, the inventory when a tool came or went, memory when the user stated a preference or a limit, CLAUDE.md when a rule of the project changed. Verify by EFFECT, never one text against another, and what THIS turn produced is not pruned in this turn. Whatever does not apply, say so in one line and finish.${premortem}")"
+  exit 0
+fi
 
 printf '{\n  "decision": "block",\n  "reason": "%s"\n}\n' "$(escape_for_json \
 "hi-claude: this turn changed ${count} file(s) and left the register untouched. Close the loop, IN THIS ORDER: (1) WHAT STOPPED BEING TRUE because of this change - the doc, the comment, the rule or the item that describes the flow you just replaced. It gets corrected or DELETED where it lives; DELETING CLOSES THE LOOP EXACTLY AS WRITING DOES, and a closed item is deleted, never ticked. (2) WHAT IS NOT IN ITS PLACE - of what you wrote, what does not belong to the document it landed in: context that outlives the item it was written under, one subject split across two files, a document no CLAUDE.md declares. MOVING IS NOT PRUNING, so this one is NOT exempt by the rule below - carrying something to its home destroys nothing. (3) docs/ROADMAP.md - what is missing and what is already resolved, one line each. (4) the live picture, if what exists changed. (5) the inventory - if a skill, plugin, MCP server or tool was added, changed or retired, its document says so. (6) memory - propose anything the user stated as a preference or a limit. (7) CLAUDE.md, if a rule of the project changed. Verify by EFFECT: measure what is true now, never correct one text against another. WHAT THIS TURN PRODUCED IS NOT PRUNED IN THIS TURN - fresh out of the work you are the worst judge of your own closure, so mark it and prune it when its closing evidence lands. Whatever does not apply to what you just did, say so in one line and finish.${premortem}")"

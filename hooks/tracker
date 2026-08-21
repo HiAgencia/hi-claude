@@ -14,6 +14,9 @@ input=$(cat)
 tool=$(json_str "$input" tool_name)
 session=$(json_str "$input" session_id)
 file_path=$(json_str "$input" file_path)
+# The TURN key, for the per-turn consultation the guardian keys on. Absent, both fall back to their
+# per-write behaviour, which is the safe direction.
+prompt_id=$(json_str "$input" prompt_id)
 
 [ -n "$session" ] || exit 0
 
@@ -26,6 +29,44 @@ real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
 norm=$(printf '%s' "$real" | tr '[:upper:]' '[:lower:]')
 marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
 size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
+
+# THE REGISTER IS THE ONE THE SESSION START INJECTS, and no other file that happens to share its name.
+# Matching `*/roadmap.md` anywhere settles the debt from a copy nobody reads: measured, a register
+# under `vendor/`, one under `.venv/lib/site-packages/`, a fixture in `tests/`, one in `third_party/`
+# and one inside `.git/` all settled it, and each of those is a way to silence the close without
+# closing anything. Deriving the two candidates from `cwd` - exactly as `session-start` does - makes
+# the two hooks agree BY CONSTRUCTION: what the start injects is what the close accepts. Without a
+# `cwd` in the payload it falls back to the conservative pattern, never to the broad one.
+cwd=$(json_str "$input" cwd)
+cwd=$(printf '%s' "$cwd" | sed 's#\\\\#\\#g' | tr '\\' '/' | sed 's#//*#/#g' | sed 's#/$##')
+low=""; reg_docs=""; reg_root=""; est_docs=""; est_root=""; est_alt=""
+if [ -n "$cwd" ]; then
+  low=$(printf '%s' "$cwd" | tr '[:upper:]' '[:lower:]')
+  reg_docs="${low}/docs/roadmap.md"; reg_root="${low}/roadmap.md"
+  est_docs="${low}/docs/estado.md"; est_alt="${low}/docs/state.md"; est_root="${low}/estado.md"
+fi
+
+# AND IT MIRRORS THE START'S SEARCH, INCLUDING ONE LEVEL DOWN. A workspace that HOLDS repos keeps its
+# register one level in, and `session-start` injects it from there - so a tracker that only accepts
+# `${cwd}` would let the session close its loop on the very file the start had handed it and keep
+# demanding. Deriving both from `cwd` is only an agreement if both derive the SAME set.
+is_register=""
+if [ -n "$cwd" ]; then
+  case "$norm" in
+    "$reg_docs"|"$reg_root") is_register="yes" ;;
+    "${low}"/*)
+      rel="${norm#${low}/}"
+      d="${rel%%/*}"
+      case "$d" in
+        # A dependency, a build output and git's own directory ship registers that are not this one.
+        node_modules|vendor|third_party|.venv|venv|site-packages|.git|dist|build|target|.tox) ;;
+        *)
+          case "${rel#*/}" in roadmap.md|docs/roadmap.md) is_register="yes" ;; esac ;;
+      esac ;;
+  esac
+else
+  case "$norm" in */docs/roadmap.md) is_register="yes" ;; esac
+fi
 
 # Size of the turn, counted separately from the debt: closing the register settles the debt but does
 # not make the block smaller. A big block just closed is when the inverse pre-mortem pays, and a
@@ -41,8 +82,7 @@ esac
 # for the inverse pre-mortem than turn size alone. Measured over this project's own work blocks:
 # half of them pass a size threshold of 6, and an offer that shows up half the time gets ignored.
 # Requiring both (closed work AND size) is what makes the offer land where it pays.
-case "$norm" in
-  */docs/roadmap.md)
+if [ -n "$is_register" ]; then
     printf 'closed\n' >> "$size" 2>/dev/null
     rm -f "$marker" 2>/dev/null
 
@@ -79,7 +119,10 @@ case "$norm" in
            END{ for (k in b) printf "%d\t%s\n", b[k], k }' "$1" 2>/dev/null
     }
     snap="${reg}.sec"
-    cur=$(wc -c < "$real" 2>/dev/null | tr -d ' ')
+    # The `-f` test comes first because `2>/dev/null` on the COMMAND does not silence the SHELL's own
+    # redirection error: on a path that is not there, the hook prints to stderr while behaving fine.
+    cur=""
+    [ -f "$real" ] && cur=$(wc -c < "$real" 2>/dev/null | tr -d ' ')
     if [ -n "$cur" ]; then
       [ -s "$reg" ] || sections "$real" > "$snap" 2>/dev/null
       printf '%s\n' "$cur" >> "$reg" 2>/dev/null
@@ -121,9 +164,44 @@ case "$norm" in
         exit 0
       fi
     fi
+    exit 0
+fi
+
+# The live picture is derived the same way and for the same reason: a `state.md` inside a dependency
+# is not this project's live picture, and accepting it settles a debt nothing closed.
+if [ -n "$cwd" ]; then
+  case "$norm" in
+    "$est_docs"|"$est_alt"|"$est_root"|"${low}/state.md")
+      rm -f "$marker" 2>/dev/null; exit 0 ;;
+  esac
+fi
+
+case "$norm" in
+  */docs/estado.md|*/docs/state.md)
+    [ -z "$cwd" ] && { rm -f "$marker" 2>/dev/null; exit 0; } ;;
+esac
+
+case "$norm" in
+  # A governed write that SUCCEEDED is a write the user confirmed - PostToolUse does not run otherwise.
+  # That is what makes this the right place to keep the turn's count and the turn's batch mark.
+  *claude.md|*claude.local.md)
+    rm -f "$marker" 2>/dev/null
+    [ -n "$prompt_id" ] && [ -n "$session" ] || exit 0
+    gov="${TMPDIR:-/tmp}/hi-claude-gov-${session}-${prompt_id}"
+    printf '.\n' >> "$gov" 2>/dev/null
+    n=$(wc -l < "$gov" 2>/dev/null | tr -d ' ')
+    # Fires on the SECOND and only the second: the first has nothing to group with, and one that
+    # repeats on every edit afterwards is one that gets learnt away. Measured, 65,7% of all governed
+    # consultations are the second or later of their turn, and one turn made 19 edits to CLAUDE.md.
+    [ "${n:-0}" = "2" ] && emit_context PostToolUse "hi-claude: that is the SECOND separate edit to a governed file this turn, and every one of them costs the user another confirmation dialog. Whatever else this file still needs, compose it and apply it in ONE write - a whole file is more reviewable than a fragment, not less."
     exit 0 ;;
-  */docs/estado.md|*/docs/state.md|*claude.md|*/memory/*.md)
-    rm -f "$marker" 2>/dev/null; exit 0 ;;
+  */memory/*.md)
+    rm -f "$marker" 2>/dev/null
+    # The batch mark: the consultation the user just approved listed the whole turn's memories, so the
+    # rest of the turn rides it. Keyed by session AND turn, which is what lets the closer clear it.
+    [ -n "$prompt_id" ] && [ -n "$session" ] || exit 0
+    : > "${TMPDIR:-/tmp}/hi-claude-mem-${session}-${prompt_id}" 2>/dev/null
+    exit 0 ;;
   */docs/inventario.md|*/docs/inventory.md|*/docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
   # The context document settles the debt for the same reason the index does: MOVING something to
@@ -144,7 +222,12 @@ case "$norm" in
   /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*.tmp) exit 0 ;;
 esac
 
-printf '%s\n' "$norm" >> "$marker" 2>/dev/null
+# ONE LINE PER FILE, not per write. The closer counts the lines of this marker and calls them
+# "file(s)", and the demand is scaled off that number - so without deduping, ONE file edited three
+# times reported "3 file(s)" and earned the full ritual. Measured by effect: three edits to a single
+# path produced the same text as three distinct files. The count has to mean what the message says.
+grep -qxF "$norm" "$marker" 2>/dev/null \
+  || printf '%s\n' "$norm" >> "$marker" 2>/dev/null
 
 # CURRENCY signal. One open plan at a time: a plan whose work already shipped leaves the tree - git
 # keeps it - and a second one written beside it turns the directory into a pile of expired claims.

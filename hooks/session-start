@@ -30,16 +30,28 @@ ${constitution}
 # Find the register. A workspace that HOLDS repos keeps its register one level in, and a session
 # opened at the root would otherwise see nothing. Looking one level down covers monorepos and
 # repo-pairs without guessing: with several candidates, naming them beats picking one.
+# The REPO ROOT counts too. Measured across real projects, two of them keep the register there, and
+# looking only under docs/ left both of them with no open work injected at any session start - while
+# the turn-close hook, matching the same way, kept demanding a register it could not see.
 roadmap="${cwd}/docs/ROADMAP.md"
+[ -f "$roadmap" ] || roadmap="${cwd}/ROADMAP.md"
 if [ ! -f "$roadmap" ]; then
   found=""; n=0
   for d in "$cwd"/*/; do
     [ -d "$d" ] || continue
-    if [ -f "${d}docs/ROADMAP.md" ]; then
-      n=$((n + 1))
-      found="${found}${d}docs/ROADMAP.md
+    # A dependency, a build output and git's own directory ship registers that are not this project's.
+    # Excluding only node_modules picked whichever of them happened to be the single candidate.
+    case "$(basename "$d")" in
+      node_modules|vendor|third_party|.venv|venv|site-packages|.git|dist|build|target|.tox) continue ;;
+    esac
+    for cand in "${d}docs/ROADMAP.md" "${d}ROADMAP.md"; do
+      if [ -f "$cand" ]; then
+        n=$((n + 1))
+        found="${found}${cand}
 "
-    fi
+        break
+      fi
+    done
   done
   if [ "$n" -eq 1 ]; then
     roadmap=$(printf '%s' "$found" | head -n 1)
@@ -76,7 +88,7 @@ if [ -f "$roadmap" ]; then
       full=${#open_work}
       open_work="${open_work:0:$MAX_ROADMAP_CHARS}
 
-[hi-claude: this block is ${full} chars and only the first ${MAX_ROADMAP_CHARS} reached this session — THE REST DID NOT ARRIVE, so what is missing from here is not answered by reading harder. A block that overflows is not big work: it is more than three items, or context that outlived the item it was written under. Open docs/ROADMAP.md, and moving what no longer belongs is what makes the rest arrive.]"
+[hi-claude: this block is ${full} chars and only the first ${MAX_ROADMAP_CHARS} reached this session — THE REST DID NOT ARRIVE, so what is missing from here is not answered by reading harder. A block that overflows is not big work: it is more than three items, or context that outlived the item it was written under, or work that is not starting now and belongs in the register's HORIZON — the section that keeps far work in its thematic block and costs nothing at startup. Open the register, and moving what no longer belongs is what makes the rest arrive.]"
     fi
     payload="${payload}
 

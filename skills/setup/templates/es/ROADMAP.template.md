@@ -44,3 +44,12 @@ Ya resuelto: una línea, re-escrita, nunca apilada.
 ## 2. Pendientes
 
 *(todavía no hay)*
+
+## 3. Horizonte — lo que no es para ahora
+
+<!-- No viaja al arranque: cuesta cero por sesión. Cada ítem lleva la CONDICIÓN que lo trae a
+     producción, que es una cosa que tiene que volverse cierta y nunca una fecha. Migrar es MOVER el
+     bloque a su sección de pendientes; por eso vive en este mismo archivo y no en otro. Esto no es
+     donde se guarda trabajo que ya empezó. -->
+
+*(todavía no hay)*
