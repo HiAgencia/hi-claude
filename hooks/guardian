@@ -235,6 +235,10 @@ fi
 # like an irreplaceable original in the explorer. So the decision stops being hygiene and becomes the
 # user's. Files that ARE tracked pass untouched - that is the common case and it stays frictionless.
 #
+# THE WHOLE THING IS SCOPED TO A REPO, because the doctrine it patches governs the PROJECT's material
+# and nothing else. See the loop below: `ls-files` cannot tell "inside a repo and ignored" from "no
+# repo here", and only the first one is what this was built for.
+#
 # QUOTED SEGMENTS FIRST, then the rest. Splitting the whole command on whitespace breaks any path
 # carrying spaces - which on Windows is the common case, not the edge one - and the damage is not that
 # it stays silent: a fragment of the broken path can still match something that exists, so the ask
@@ -266,6 +270,17 @@ SEGMENTS
         case "$(printf '%s' "$cand" | tr -d '\\/. ')" in "") continue ;; esac
         [ -e "$cand" ] || continue
         is_temp "$cand" && continue
+        # THE PREMISE ONLY HOLDS INSIDE A REPO. A path under no repo at all was never covered by "git
+        # keeps it", so quoting that rule at it says nothing - and `ls-files` cannot tell the two
+        # apart: it comes back empty both for an ignored file inside a repo, which is the case this
+        # exists for, and for a path git was never going to see. Measured in real use: deleting a
+        # scratch directory on another drive asked, naming a rule that never reached it, on work whose
+        # own convention is that it gets deleted once the run completes. An environment with no git at
+        # all lands in this same branch, which is the right place for it: nothing can be checked there,
+        # and asking on every delete is noise, not protection.
+        holder="$cand"
+        [ -d "$cand" ] || holder=$(dirname "$cand")
+        git -C "$holder" rev-parse --git-dir >/dev/null 2>&1 || continue
         # A DIRECTORY is never a pathspec `ls-files --error-unmatch` can match, so asking that way
         # reports every tracked directory as untracked. Measured: it named a repo root that git has
         # carried for its whole history. A directory counts as saved when git tracks anything inside.
@@ -279,7 +294,7 @@ SEGMENTS
 $cands
 EOF
       if [ -n "$unsaved" ]; then
-        emit_decision ask "hi-claude: git does not track this, so there is NO copy and deleting is irreversible - the rule 'it leaves the tree, git keeps it' does not cover it: ${unsaved}. Look at the CONTENT before confirming: a generated mirror whose source is still alive loses nothing, an original without a backup is lost whole, and the two look identical in the explorer."
+        emit_decision ask "hi-claude: this sits INSIDE the repo and git does not track it, so there is NO copy and deleting is irreversible - the rule 'it leaves the tree, git keeps it' does not cover it: ${unsaved}. Look at the CONTENT before confirming: a generated mirror whose source is still alive loses nothing, an original without a backup is lost whole, and the two look identical in the explorer."
         exit 0
       fi ;;
   esac

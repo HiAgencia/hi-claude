@@ -939,7 +939,8 @@ printf '%s' "$out" | grep -qF "LAST option" \
 rm -rf "$bproj"
 
 # --- belonging: deleting what git does NOT keep ---
-# A tracked file passes with no friction; an untracked one has no copy, so the call is the user's.
+# A tracked file passes with no friction; an untracked one INSIDE the repo has no copy, so the call is
+# the user's. Outside every repo the doctrine it patches never reached, so nothing is raised at all.
 #
 # The scratch repo carries SPACES in its name ON PURPOSE. An earlier version of this bench used a
 # space-free path because that was the one where the hook worked - which is choosing the case that
@@ -990,13 +991,30 @@ if git -C "$dproj" init -q >/dev/null 2>&1; then
   printf '%s' "$out" | grep -qF "NO copy" \
     && ko "belonging: a tracked DIRECTORY is not reported as unsaved" "$out" \
     || ok "belonging: a tracked DIRECTORY is not reported as unsaved"
-  # The other direction in the same run: a directory git never saw still has to ask.
-  mkdir -p "$dproj/../hi claude untracked dir" && printf 'x\n' > "$dproj/../hi claude untracked dir/a.txt"
-  out=$(delcmd "$dproj/../hi claude untracked dir")
+  # The other direction in the same run: a directory INSIDE the repo that git never saw still asks.
+  mkdir -p "$dproj/scrap dir" && printf 'x\n' > "$dproj/scrap dir/a.txt"
+  out=$(delcmd "$dproj/scrap dir")
   printf '%s' "$out" | grep -qF "NO copy" \
-    && ok "belonging: an untracked DIRECTORY still asks" \
-    || ko "belonging: an untracked DIRECTORY still asks" "$out"
-  rm -rf "$dproj/../hi claude untracked dir" 2>/dev/null
+    && ok "belonging: an untracked DIRECTORY inside the repo still asks" \
+    || ko "belonging: an untracked DIRECTORY inside the repo still asks" "$out"
+  rm -rf "$dproj/scrap dir" 2>/dev/null
+  # AND THE SCOPE. Outside every repo the premise never applied, and `ls-files` comes back empty
+  # there exactly as it does for an ignored file inside one - so without the repo test this notice
+  # fires on material git was never going to see. Measured in real use on a scratch directory on
+  # another drive, whose own convention is that it gets deleted once the run completes.
+  # It cannot be built under the temp dir: `is_temp` decides earlier and it would pass for the
+  # wrong reason.
+  outside="$HOME/hi claude norepo"
+  rm -rf "$outside" 2>/dev/null; mkdir -p "$outside" && printf 'x\n' > "$outside/a.txt"
+  if git -C "$outside" rev-parse --git-dir >/dev/null 2>&1; then
+    printf 'SKIP  belonging scope: HOME sits inside a repo here, so the no-repo case cannot be built\n'
+  else
+    out=$(delcmd "$outside")
+    printf '%s' "$out" | grep -qF "NO copy" \
+      && ko "belonging: outside every repo it stays silent" "$out" \
+      || ok "belonging: outside every repo it stays silent"
+  fi
+  rm -rf "$outside" 2>/dev/null
 else
   printf 'SKIP  belonging deletion: no git available to build the scratch repo\n'
 fi

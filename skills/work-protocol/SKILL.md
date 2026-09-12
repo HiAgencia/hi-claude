@@ -94,10 +94,12 @@ The procedure, in order — skipping a step is what turns pruning into losing so
 3. **Delete, do not decorate.** It leaves the tree; git keeps it. Not archived, not renamed to
    `-old`, not struck through, not ticked as done. A document marked historical still gets read,
    still costs context, and still has to be ruled on every time someone opens the folder.
-   ⚠️ **"git keeps it" does NOT hold for a file git never tracked.** There is no copy, deleting is
-   irreversible, and the decision stops being hygiene and becomes the user's: ask. Look at the
-   CONTENT first — a generated mirror whose source is still alive loses nothing, an original without
-   a backup is lost whole, and the two look identical in the explorer.
+   CAREFUL: **"git keeps it" does NOT hold for a file INSIDE the repo that git never tracked.** There
+   is no copy, deleting is irreversible, and the decision stops being hygiene and becomes the user's:
+   ask. Look at the CONTENT first — a generated mirror whose source is still alive loses nothing, an
+   original without a backup is lost whole, and the two look identical in the explorer. Outside any
+   repo the rule never applied, so there is nothing to warn about: scratch and fallback material has
+   its own convention, and deleting it once the run completed is the last step of the work.
 4. **Correct the index.** A document that leaves and an index that still declares it is a dead
    reference; a document that stays and no index declares is one no session ever opens.
 

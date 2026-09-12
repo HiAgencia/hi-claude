@@ -42,7 +42,7 @@ gets run once.
 > better, a demand scaled to the change, a consultation that stopped repeating — asks nothing and does
 > not belong here. Without that filter this becomes the changelog it exists to replace.
 
-**Version that carries this panorama: 4.1.0**
+**Version that carries this panorama: 4.1.1**
 
 ## The HORIZON — what is not for now stops taking up the session start
 
