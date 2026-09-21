@@ -23,10 +23,9 @@ form, criterion or scope is in doubt, hi-claude decides.
   and MEMORIES alike.
 - **OBJECTIVE** — facts, behaviour, evidence. No attributed intent, no verdict of value: write
   `returned HTTP 500 under these conditions`, not `failed because it was misconfigured`.
-- **NON-CONDITIONING** — the state OBSERVED, with its method and its N, never a closed door. Nothing
-  is written as *cannot*; it is written as *not observed when recorded*. `Ceiling`, `impossible`,
-  `no signal`, `definitive` are the exact shape this forbids — a closed verdict costs every future
-  session the attempt.
+- **NON-CONDITIONING** — the state OBSERVED, never a closed door. Nothing is written as *cannot*; it is
+  written as *not observed when recorded*. `Ceiling`, `impossible`, `no signal`, `definitive` are the
+  exact shape this forbids — a closed verdict costs every future session the attempt.
 - **CURRENT** — a line persists while it is still TRUE and still SERVES a future session. Failing
   either, it goes: not archived, not struck through, not ticked as done. Gone — git keeps it.
   SIZE IS NOT THE MEASURE for this axis: what scores is what EXPIRED, never the line count. That is
@@ -41,6 +40,11 @@ user's explicit word overrides every other level and keeps what they asked to ke
 **3** CURRENT → **4** BELONGS → **5** OBJECTIVE → **6** NON-CONDITIONING, which never overrides the
 others and conditions how all of them are finally written. CURRENT sits above BELONGS on purpose:
 nothing gets a home found for it when it already stopped serving.
+
+**The rule travels WITHOUT its history.** TIMELESS and OBJECTIVE do not pull against each other: the
+evidence, its method, its N and the case that produced a rule live in the evidence document under
+`docs/`, and a CLAUDE.md, a memory, a code comment or any document that loads on its own carries the
+rule, the limit and the why — with the path when the magnitude matters.
 
 **Nothing is pruned in the turn that produced it.** What authorises deleting is not the agent
 believing it finished — it is the EVIDENCE of closure: the runnable criterion that passes, the version
@@ -72,7 +76,8 @@ Where the rest lives:
 | writing docs, comments or commits; finding the DESTINATION or MERGING; PRUNING what stopped being true; closing a problem | `hi-claude:work-protocol` |
 | dispatching a subagent, or reading what one brought back | `hi-claude:delegation` |
 | stuck, or a big block just closed | `hi-claude:seeding-doubts` |
+| a run that loads the machine, or a re-launch | `hi-claude:heavy-runs` |
 | setting up a project | `hi-claude:setup` |
-| checking the project's health | `hi-claude:audit` |
+| checking the project's health, or what a plugin update asks of it | `hi-claude:audit` |
 
 Answer and produce user-facing content in the user's language.

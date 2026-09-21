@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Stop hook for hi-claude: a turn that changed the system does not end with the register stale.
+# Stop hook for hi-claude: a block of work that changed the system does not end with the register stale.
 #
-# The FIRST question is what stopped being true, not what is missing. Measured on this project's own
-# history: six write destinations were demanded per turn and zero deletions, so the cheapest way to
-# settle the debt was always to add a line - which is how a register accumulates claims that expired.
-# Deleting settles it exactly as writing does. What the turn itself produced is explicitly exempt:
-# fresh out of the work the agent assumes it finished and that it finished well, and that reading
-# needs closing evidence before it authorises deleting anything.
+# The FIRST question is what stopped being true, not what is missing: when every destination asks for a
+# new line, adding one is the cheapest way to settle the debt, and a register fills with claims that
+# expired. Deleting settles it exactly as writing does. What the turn itself produced is exempt from
+# pruning: that reading needs closing evidence before it authorises deleting anything.
+#
+# THE DEBT ACCUMULATES UNTIL IT IS WORTH A BLOCK. The marker holds one line per changed FILE and is
+# keyed by SESSION, so a turn below the threshold passes and leaves it in place; the block lands when
+# the session has gathered MIN_FILES without touching the register. A demand raised over one file
+# mostly finds nothing to do, and a demand that mostly finds nothing gets answered without looking.
+# The evidence behind the threshold lives in the maintainers' eval reports, not here.
 #
 # CONTRACT: `decision` and `reason` are TOP-LEVEL for Stop - NOT a hookSpecificOutput envelope, which
 # is the union PreToolUse and SessionStart use. Getting this wrong fails schema validation and the
 # hook is dropped without any error the user would notice.
 #
-# It blocks ONCE per turn: the marker is cleared as it blocks, and `stop_hook_active` is honoured, so
+# It blocks ONCE per cycle: the marker is cleared as it blocks, and `stop_hook_active` is honoured, so
 # a second stop in the same cycle always passes. A guarantee that traps the user is not a guarantee.
 set -uo pipefail
 
@@ -24,62 +28,26 @@ session=$(json_str "$input" session_id)
 [ -n "$session" ] || exit 0
 
 marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
-size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
 
 # The turn's per-consultation marks die with the turn. They are keyed by session AND turn precisely so
 # this line can bound them: without it they accumulate in the temp dir for the life of the machine.
-rm -f "${TMPDIR:-/tmp}/hi-claude-mem-${session}-"* "${TMPDIR:-/tmp}/hi-claude-gov-${session}-"* 2>/dev/null
+rm -f "${TMPDIR:-/tmp}/hi-claude-mem-${session}-"* "${TMPDIR:-/tmp}/hi-claude-gov-${session}-"* \
+      "${TMPDIR:-/tmp}/hi-claude-md-${session}-"* 2>/dev/null
 
-# A big block just closed is when the inverse pre-mortem pays: what did we NOT look at? Measured,
-# a skill description never fires for this - finishing well feels like nothing needs a skill. So it
-# arrives here, as context, without blocking: doubts are an offer, never an obligation.
-# Two conditions, not one. Size alone fires on half of all work blocks (measured on this project's
-# own history), and an offer that shows up half the time is one that gets ignored. Requiring that the
-# turn also CLOSED work — it wrote the register — is what makes it land where the pre-mortem pays.
-BIG=6
-touched=$(grep -c '^\.' "$size" 2>/dev/null | tr -d ' ')
-[ -n "$touched" ] || touched=0
-closed=$(grep -c '^closed$' "$size" 2>/dev/null | tr -d ' ')
-[ -n "$closed" ] || closed=0
-premortem=""
-if [ "$touched" -ge "$BIG" ] && [ "$closed" -ge 1 ]; then
-  premortem=" This turn changed ${touched} files - a block that size is worth an inverse pre-mortem before it is behind you: what did we NOT look at, which number is repeated across contexts, which reading would INVERT if checked. hi-claude:seeding-doubts holds the protocol; its output is MORE doubts to measure, never conclusions."
-fi
-
-if [ ! -f "$marker" ]; then
-  # No debt, but a large block still deserves the offer.
-  if [ -n "$premortem" ]; then
-    rm -f "$size" 2>/dev/null
-    printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "Stop",\n    "additionalContext": "%s"\n  }\n}\n' \
-      "$(escape_for_json "hi-claude:${premortem}")"
-  fi
-  exit 0
-fi
+[ -f "$marker" ] || exit 0
 
 # Already inside a stop-hook cycle: never block twice.
 case "$input" in
   *'"stop_hook_active": true'*|*'"stop_hook_active":true'*)
-    rm -f "$marker" "$size" 2>/dev/null; exit 0 ;;
+    rm -f "$marker" 2>/dev/null; exit 0 ;;
 esac
 
+MIN_FILES=3
 count=$(wc -l < "$marker" 2>/dev/null | tr -d ' ')
-rm -f "$marker" "$size" 2>/dev/null
-
-# THE DEMAND IS SCALED TO THE CHANGE. A seven-step ritual costs the same for a typo as for a refactor,
-# and measured over 563 real blocks that is what it charged: 224 of them (40%) fired over ONE file and
-# 57% over one or two. After a one-file block the turn wrote NOTHING 25% of the time - a median of 6
-# assistant messages and 3 tool calls spent re-auditing to conclude nothing applied. A demand that
-# usually finds nothing is one that gets answered without looking, which costs the guarantee itself.
-#
-# SMALL=2 is where the measurement puts the line: below it the two questions that actually pay, above
-# it the full loop. The number moves with a new measurement of that same distribution, not by feel.
-SMALL=2
-if [ "${count:-0}" -le "$SMALL" ]; then
-  printf '{\n  "decision": "block",\n  "reason": "%s"\n}\n' "$(escape_for_json \
-"hi-claude: this turn changed ${count} file(s) and left the register untouched. Three questions, one line each. (1) WHAT DID THIS MAKE FALSE - the doc, the comment, the rule or the item that describes the flow you just replaced. It gets corrected or DELETED where it lives, and deleting closes the loop exactly as writing does. (2) docs/ROADMAP.md - what is missing now and what is already resolved. (3) IF SOMETHING ELSE CHANGED, its document says so in one line: the live picture when what EXISTS changed, the inventory when a tool came or went, memory when the user stated a preference or a limit, CLAUDE.md when a rule of the project changed. Verify by EFFECT, never one text against another, and what THIS turn produced is not pruned in this turn. Whatever does not apply, say so in one line and finish.${premortem}")"
-  exit 0
-fi
+# Below the threshold the marker STAYS: the debt is deferred, not forgiven.
+[ "${count:-0}" -ge "$MIN_FILES" ] || exit 0
+rm -f "$marker" 2>/dev/null
 
 printf '{\n  "decision": "block",\n  "reason": "%s"\n}\n' "$(escape_for_json \
-"hi-claude: this turn changed ${count} file(s) and left the register untouched. Close the loop, IN THIS ORDER: (1) WHAT STOPPED BEING TRUE because of this change - the doc, the comment, the rule or the item that describes the flow you just replaced. It gets corrected or DELETED where it lives; DELETING CLOSES THE LOOP EXACTLY AS WRITING DOES, and a closed item is deleted, never ticked. (2) WHAT IS NOT IN ITS PLACE - of what you wrote, what does not belong to the document it landed in: context that outlives the item it was written under, one subject split across two files, a document no CLAUDE.md declares. MOVING IS NOT PRUNING, so this one is NOT exempt by the rule below - carrying something to its home destroys nothing. (3) docs/ROADMAP.md - what is missing and what is already resolved, one line each. (4) the live picture, if what exists changed. (5) the inventory - if a skill, plugin, MCP server or tool was added, changed or retired, its document says so. (6) memory - propose anything the user stated as a preference or a limit. (7) CLAUDE.md, if a rule of the project changed. Verify by EFFECT: measure what is true now, never correct one text against another. WHAT THIS TURN PRODUCED IS NOT PRUNED IN THIS TURN - fresh out of the work you are the worst judge of your own closure, so mark it and prune it when its closing evidence lands. Whatever does not apply to what you just did, say so in one line and finish.${premortem}")"
+"hi-claude: this session changed ${count} file(s) and left the register untouched. Close the loop, one line each, IN THIS ORDER: (1) WHAT STOPPED BEING TRUE because of this change - the doc, the comment, the rule or the item that describes the flow you just replaced. It gets corrected or DELETED where it lives; DELETING CLOSES THE LOOP EXACTLY AS WRITING DOES, and a closed item is deleted, never ticked. (2) WHAT IS NOT IN ITS PLACE - context that outlives the item it was written under, one subject split across two files, a document no CLAUDE.md declares. MOVING IS NOT PRUNING, so it is not held back by the rule below. (3) docs/ROADMAP.md - what is missing and what is already resolved. (4) ONLY IF IT CHANGED: the live picture when what EXISTS changed, the inventory when a tool came or went, memory when the user stated a preference or a limit, CLAUDE.md when a rule of the project changed. Verify by EFFECT: measure what is true now, never correct one text against another. WHAT THIS TURN PRODUCED IS NOT PRUNED IN THIS TURN - mark it and prune it when its closing evidence lands. Whatever does not apply, say so in one line and finish.")"
 exit 0

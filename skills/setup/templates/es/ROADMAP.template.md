@@ -1,11 +1,8 @@
 <!-- Generado por hi-claude. Registro ÚNICO de lo que falta. Los comentarios HTML no consumen contexto. -->
 # ROADMAP — {{PROJECT_NAME}}
 
-> **hi-claude gobierna este registro.** Sus principios, su jerarquía y sus criterios de redacción
-> llegan solos a cada sesión — acá no se copian.
->
 > Lo que FALTA, imperativo y atemporal. Al cerrarse un ítem se BORRA: lo hecho vive en `ESTADO.md`,
-> en el trabajo mismo y en los commits. Sin fechas, sin bitácora, sin ✅.
+> en el trabajo mismo y en los commits. Sin fechas, sin bitácora, sin marcas de hecho.
 
 ## 0. Mapa de ejecución
 
@@ -18,9 +15,6 @@
 | `[O]` operación | ventana, coordinación, un acceso que no tiene | dejar el checklist ejecutable, no dispararlo |
 | `[D]` decisión | el GO del usuario | traer el dato que decide, no el argumento |
 | `[B]` medición | sesión dedicada | fuera de alcance |
-
-**HUBS** — se hacen primero porque desbloquean a otros:
-*(todavía no hay)*
 
 **Criterio de sesión cerrada** — corrible, se corre antes de declarar nada:
 {{SESSION_DONE_CRITERION}}

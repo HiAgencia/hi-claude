@@ -88,7 +88,7 @@ was checked against; the reader decides what it is worth.
 
 ```
 COUNTED: <n> documents · <n> lines · <n> lines that expired (<n>% of the documentation)
-CRITICAL: <🚨 secrets in plain text with file:line, or "none">
+CRITICAL: <secrets in plain text with file:line, or "none">
 EXPIRED (top 2):
 1. [file:line] <what the document claims> — CHECKED AGAINST: <the effect you read> — WHY IT EXPIRED — FIX: <delete / compress to invariant / correct the index>, and what to rescue before it goes
 2. ...

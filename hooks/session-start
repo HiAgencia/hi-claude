@@ -10,7 +10,7 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Claude Code caps `additionalContext` at 10.000 characters, and past that the payload is cut with no
 # error anyone would notice. 4.000 is the register's share of that budget: the constitution, the
 # declared titles and the drift block all ride in the SAME payload, so raising this silently steals
-# room from them. Rescued here from the v2 plan before it left the tree - it lived nowhere else.
+# room from them.
 MAX_ROADMAP_CHARS=4000
 
 input=$(cat 2>/dev/null || true)
@@ -20,19 +20,27 @@ cwd=$(json_str "$input" cwd)
 cwd=$(printf '%s' "$cwd" | sed 's#\\\\#\\#g')
 [ -z "$cwd" ] && cwd="$PWD"
 
-constitution=$(cat "${PLUGIN_ROOT}/skills/memory-protocol/constitution.md" 2>/dev/null \
-  || printf 'hi-claude: constitution.md not found')
-
-payload="<hi-claude-method>
+# ONE RULE LIVES IN ONE FILE. The principles weigh on every session, so their home is the user's global
+# CLAUDE.md, which the runtime loads whole and in the user's language. `setup` proposes that block
+# between the `hi-claude:principios` markers; when it is there, injecting the Constitution as well
+# would be a second copy in a second vocabulary. When it is not - the user declined it, or the plugin
+# was just installed - the Constitution rides along, so the principles never depend on a step somebody
+# has to remember. The markers are identical in every language, which keeps the test language-free.
+global_md="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+payload=""
+if ! grep -qF '<!-- hi-claude:principios -->' "$global_md" 2>/dev/null; then
+  constitution=$(cat "${PLUGIN_ROOT}/skills/memory-protocol/constitution.md" 2>/dev/null \
+    || printf 'hi-claude: constitution.md not found')
+  payload="<hi-claude-method>
 ${constitution}
 </hi-claude-method>"
+fi
 
 # Find the register. A workspace that HOLDS repos keeps its register one level in, and a session
 # opened at the root would otherwise see nothing. Looking one level down covers monorepos and
 # repo-pairs without guessing: with several candidates, naming them beats picking one.
-# The REPO ROOT counts too. Measured across real projects, two of them keep the register there, and
-# looking only under docs/ left both of them with no open work injected at any session start - while
-# the turn-close hook, matching the same way, kept demanding a register it could not see.
+# The REPO ROOT counts too: projects keep the register there, and looking only under docs/ leaves them
+# with no open work injected while the turn-close hook keeps demanding a register it cannot see.
 roadmap="${cwd}/docs/ROADMAP.md"
 [ -f "$roadmap" ] || roadmap="${cwd}/ROADMAP.md"
 if [ ! -f "$roadmap" ]; then
@@ -80,10 +88,9 @@ if [ -f "$roadmap" ]; then
     | grep -v '^[[:space:]]*\*(.*)\*[[:space:]]*$' \
     | tr -d '[:space:]')
   if [ -n "$substance" ]; then
-    # Overflow is SAID, not just marked. Measured across five real registers on disk, two of them
-    # overflow (4.836 and 5.860 chars): their open-work block arrives cut and the session cannot tell,
-    # because a trailing marker reads as a formality. The number is what makes it actionable - and the
-    # cause is almost never big work: it is a fourth item, or context that outlived its own item.
+    # Overflow is SAID, not just marked: a block that arrives cut looks whole to the session, and a
+    # trailing marker reads as a formality. The number is what makes it actionable - and the cause is
+    # rarely big work: it is a fourth item, or context that outlived its own item.
     if [ "${#open_work}" -gt "$MAX_ROADMAP_CHARS" ]; then
       full=${#open_work}
       open_work="${open_work:0:$MAX_ROADMAP_CHARS}
@@ -132,9 +139,33 @@ done
 if [ -n "$inventory" ]; then
   registry="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json"
   if [ -f "$registry" ]; then
+    # ONLY WHAT LOADS HERE. The registry lists every install on the machine, each with its scope and,
+    # for project and local scopes, the project it belongs to. A plugin installed for another project
+    # never loads in this one, and naming it as drift teaches the project to declare tools it cannot
+    # use just to silence the notice. A plugin counts when any of its installs is user-wide, or points
+    # at this directory or a parent of it; one that carries no project path at all counts too, which
+    # is the safe side of a registry shape this parser does not know.
+    # The tokens are pulled in ORDER OF APPEARANCE, so the same pass reads a pretty-printed registry
+    # and a single-line one.
+    cwd_n=$(printf '%s' "$cwd" | tr '\\' '/' | sed 's#//*#/#g; s#/$##' | tr '[:upper:]' '[:lower:]')
     missing=""
-    for p in $(grep -oE '"[A-Za-z0-9._-]+@[A-Za-z0-9._-]+"[[:space:]]*:' "$registry" \
-                 | sed 's/"//g;s/[[:space:]]*:$//' | cut -d@ -f1 | sort -u); do
+    for p in $(grep -oE '"[A-Za-z0-9._-]+@[A-Za-z0-9._-]+"[[:space:]]*:|"scope"[[:space:]]*:[[:space:]]*"[^"]*"|"projectPath"[[:space:]]*:[[:space:]]*"[^"]*"' "$registry" \
+                 | awk -v cwd="$cwd_n" '
+                     function out() { if (name != "" && (u || hit || np == 0)) print name }
+                     /^"scope"/ {
+                       v = $0; sub(/^"scope"[[:space:]]*:[[:space:]]*"/, "", v); sub(/"$/, "", v)
+                       if (v == "user" || v == "managed") u = 1
+                       next
+                     }
+                     /^"projectPath"/ {
+                       v = $0; sub(/^"projectPath"[[:space:]]*:[[:space:]]*"/, "", v); sub(/"$/, "", v)
+                       gsub(/\\+/, "/", v); gsub(/\/+/, "/", v); sub(/\/$/, "", v); v = tolower(v)
+                       np++
+                       if (cwd == v || index(cwd, v "/") == 1) hit = 1
+                       next
+                     }
+                     { out(); name = $0; sub(/^"/, "", name); sub(/@.*/, "", name); u = 0; hit = 0; np = 0 }
+                     END { out() }' | sort -u); do
       grep -qiF -- "$p" "$inventory" || missing="${missing}${p} "
     done
     if [ -n "$missing" ]; then
@@ -150,5 +181,8 @@ their own document and corrected when they change."
   fi
 fi
 
+# Nothing real to say is nothing injected: with the principles living in the global file, a project
+# with no open work, no index and no drift starts clean.
+[ -n "$(printf '%s' "$payload" | tr -d '[:space:]')" ] || exit 0
 emit_context SessionStart "$payload"
 exit 0

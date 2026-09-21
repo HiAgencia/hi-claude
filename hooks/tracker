@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# PostToolUse for hi-claude: records whether this turn touched the system, so the closer can demand
-# the register be current before the turn ends.
+# PostToolUse for hi-claude: records which files this session changed, so the closer can demand the
+# register be current once the change is worth it.
 #
 # State is ONE marker file per session under the temp dir: no dependency, nothing written into the
 # user's project, and it dies with the machine's temp. Writing the register CLEARS the marker, which
-# is what makes the rule "every change updates the register" measurable instead of hoped for.
+# is what makes the rule "every change updates the register" checkable instead of hoped for.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -28,15 +28,12 @@ esac
 real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
 norm=$(printf '%s' "$real" | tr '[:upper:]' '[:lower:]')
 marker="${TMPDIR:-/tmp}/hi-claude-turn-${session}"
-size="${TMPDIR:-/tmp}/hi-claude-size-${session}"
 
 # THE REGISTER IS THE ONE THE SESSION START INJECTS, and no other file that happens to share its name.
-# Matching `*/roadmap.md` anywhere settles the debt from a copy nobody reads: measured, a register
-# under `vendor/`, one under `.venv/lib/site-packages/`, a fixture in `tests/`, one in `third_party/`
-# and one inside `.git/` all settled it, and each of those is a way to silence the close without
-# closing anything. Deriving the two candidates from `cwd` - exactly as `session-start` does - makes
-# the two hooks agree BY CONSTRUCTION: what the start injects is what the close accepts. Without a
-# `cwd` in the payload it falls back to the conservative pattern, never to the broad one.
+# A register under a dependency, a build output, a fixture or git's own directory is a way to silence
+# the close without closing anything. Deriving the candidates from `cwd` - exactly as `session-start`
+# does - makes the two hooks agree BY CONSTRUCTION: what the start injects is what the close accepts.
+# Without a `cwd` in the payload it falls back to the conservative pattern, never to the broad one.
 cwd=$(json_str "$input" cwd)
 cwd=$(printf '%s' "$cwd" | sed 's#\\\\#\\#g' | tr '\\' '/' | sed 's#//*#/#g' | sed 's#/$##')
 low=""; reg_docs=""; reg_root=""; est_docs=""; est_root=""; est_alt=""
@@ -47,9 +44,8 @@ if [ -n "$cwd" ]; then
 fi
 
 # AND IT MIRRORS THE START'S SEARCH, INCLUDING ONE LEVEL DOWN. A workspace that HOLDS repos keeps its
-# register one level in, and `session-start` injects it from there - so a tracker that only accepts
-# `${cwd}` would let the session close its loop on the very file the start had handed it and keep
-# demanding. Deriving both from `cwd` is only an agreement if both derive the SAME set.
+# register one level in, and `session-start` injects it from there. Deriving both from `cwd` is only
+# an agreement if both derive the SAME set.
 is_register=""
 if [ -n "$cwd" ]; then
   case "$norm" in
@@ -68,51 +64,26 @@ else
   case "$norm" in */docs/roadmap.md) is_register="yes" ;; esac
 fi
 
-# Size of the turn, counted separately from the debt: closing the register settles the debt but does
-# not make the block smaller. A big block just closed is when the inverse pre-mortem pays, and a
-# skill description alone never fires for it - there is no moment that feels like it needs a skill.
-case "$norm" in
-  /tmp/*|/var/tmp/*|*/appdata/local/temp/*|*/scratchpad/*|*.tmp) ;;
-  *) printf '.
-' >> "$size" 2>/dev/null ;;
-esac
-
 # Writing the register, the live picture, the inventory, CLAUDE.md or memory settles the debt.
-# Touching the REGISTER also marks the turn as one that CLOSED work — which is a far better signal
-# for the inverse pre-mortem than turn size alone. Measured over this project's own work blocks:
-# half of them pass a size threshold of 6, and an offer that shows up half the time gets ignored.
-# Requiring both (closed work AND size) is what makes the offer land where it pays.
 if [ -n "$is_register" ]; then
-    printf 'closed\n' >> "$size" 2>/dev/null
     rm -f "$marker" 2>/dev/null
 
     # BELONGING signal. A healthy register OSCILLATES: work comes in, work closes, it goes up and it
-    # goes down. Measured on a project under this method, it went 99.060 -> 853.468 bytes over three
-    # weeks WITHOUT ONE DROP, and only came down by hand.
+    # goes down. Monotony is the signal, not size: it depends on neither the item format nor the
+    # writing style. It fires once and resets, because a signal repeated every turn is one that gets
+    # learnt away.
     #
-    # Monotony is the signal, not size. The two alternatives were measured and refuted on that same
-    # register: by ITEM parses 0 blocks (`### ` appears zero times in it), and by LINE reaches 40% of
-    # the volume at 800 ch because the rest is mass spread thin. Monotony depends on neither the
-    # format nor the writing style. It fires once and resets, because a signal repeated every turn is
-    # one that gets learnt away.
-    #
-    # The counter is keyed by the REGISTER, not by the session. Keyed by session it demanded FIVE
-    # writes to the register INSIDE ONE session - measured across five real registers on disk, none of
-    # them ever emitted, and the largest reached 530.624 ch with the signal never firing. Monotony is
-    # a property of the file ACROSS sessions, so its counter has to outlive one.
-    # `cksum` emits "<crc> <bytes>", and keeping BOTH digits runs means a collision needs the same
-    # CRC32 *and* the same path length. If the binary is missing, the fallback stays keyed by the
-    # REGISTER - falling back to the session would silently restore the unreachable threshold this
-    # key exists to fix, and a guarantee that degrades without saying so is the failure mode being
-    # designed out here.
+    # The counter is keyed by the REGISTER, not by the session: monotony is a property of the file
+    # ACROSS sessions, so its counter has to outlive one. `cksum` emits "<crc> <bytes>", and keeping
+    # BOTH digit runs means a collision needs the same CRC32 *and* the same path length. If the binary
+    # is missing, the fallback stays keyed by the REGISTER - falling back to the session would restore
+    # a threshold no single session reaches, without saying so.
     key=$(printf '%s' "$norm" | cksum 2>/dev/null | tr -cd '0-9' | cut -c1-16)
     [ -n "$key" ] || key=$(printf '%s' "$norm" | tr -c 'a-z0-9' '-' | tail -c 60)
     reg="${TMPDIR:-/tmp}/hi-claude-reg-${key}"
-    # Per-section snapshot, taken when the window OPENS. Naming the biggest section was measured on
-    # the five real registers and emitted on 5 of 5, pointing at `2. Pendientes` (66%) in a register
-    # of pending work: with a handful of sections the largest one holds a quarter by arithmetic, so
-    # that is structure, not signal. What GREW inside the window answers where the growth came from,
-    # which is the question monotony is asking.
+    # Per-section snapshot, taken when the window OPENS. What gets named is the section where the
+    # growth LANDED, not the biggest one: with a handful of sections the largest holds a large share
+    # by arithmetic, which is structure and not signal.
     sections() {
       awk '/^## /{ h=$0; sub(/^##[[:space:]]*/,"",h); next }
            h!=""{ b[h]+=length($0)+1 }
@@ -128,8 +99,7 @@ if [ -n "$is_register" ]; then
       printf '%s\n' "$cur" >> "$reg" 2>/dev/null
       # Twenty writes without the signal means the register oscillates, which is the healthy shape.
       # Start a FRESH window - samples and snapshot together - instead of trimming the samples alone:
-      # trimming leaves the snapshot older than the samples it gets compared against, and the deltas
-      # would then span a different period than the "first -> cur" the message reports.
+      # trimming leaves the snapshot older than the samples it gets compared against.
       lines=$(wc -l < "$reg" 2>/dev/null | tr -d ' ')
       if [ -n "$lines" ] && [ "$lines" -gt 20 ]; then
         printf '%s\n' "$cur" > "$reg" 2>/dev/null
@@ -145,9 +115,6 @@ if [ -n "$is_register" ]; then
       done
       if [ "$steps" -ge 4 ] && [ "$ups" -ge 4 ]; then
         first=$(tail -n 5 "$reg" 2>/dev/null | head -n 1)
-        # WHAT GETS NAMED is where the growth landed, not the densest lines. Measured on a 530.624 ch
-        # register: its three densest lines are 6.542 ch (1,2%) and its twenty longest 6,7%, because
-        # the mass sits in hundreds of medium lines - naming them cannot move the file.
         top=""
         if [ -s "$snap" ]; then
           sections "$real" > "${snap}.now" 2>/dev/null
@@ -191,8 +158,7 @@ case "$norm" in
     printf '.\n' >> "$gov" 2>/dev/null
     n=$(wc -l < "$gov" 2>/dev/null | tr -d ' ')
     # Fires on the SECOND and only the second: the first has nothing to group with, and one that
-    # repeats on every edit afterwards is one that gets learnt away. Measured, 65,7% of all governed
-    # consultations are the second or later of their turn, and one turn made 19 edits to CLAUDE.md.
+    # repeats on every edit afterwards is one that gets learnt away.
     [ "${n:-0}" = "2" ] && emit_context PostToolUse "hi-claude: that is the SECOND separate edit to a governed file this turn, and every one of them costs the user another confirmation dialog. Whatever else this file still needs, compose it and apply it in ONE write - a whole file is more reviewable than a fragment, not less."
     exit 0 ;;
   */memory/*.md)
@@ -204,16 +170,11 @@ case "$norm" in
     exit 0 ;;
   */docs/inventario.md|*/docs/inventory.md|*/docs/skills.md|*/docs/mcp.md|*/docs/plugins.md|*/docs/tools.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
-  # The context document settles the debt for the same reason the index does: MOVING something to
-  # where it belongs closes the loop exactly as writing a new line would. Without this, carrying
-  # context out of the register left the turn still in debt and the cheapest way out was to add
-  # another line to the register — the accumulation incentive, pointing the wrong way.
-  */docs/contexto.md|*/docs/context.md)
-    rm -f "$marker" 2>/dev/null; exit 0 ;;
-  # Correcting the index is what closes the loop after pruning: a document leaves the tree through
-  # the shell, which this hook never sees, so without this line a turn that PRUNED stayed in debt and
-  # the only way out was to write something new. That is the accumulation incentive, reversed here.
-  */docs/index.md)
+  # The context document and the index settle the debt for the same reason: MOVING something to where
+  # it belongs, or correcting the index after a document left the tree through the shell, closes the
+  # loop exactly as writing a new line would. Without them a turn that pruned or moved stayed in debt
+  # and the cheapest way out was to add a line - the accumulation incentive, pointing the wrong way.
+  */docs/contexto.md|*/docs/context.md|*/docs/index.md)
     rm -f "$marker" 2>/dev/null; exit 0 ;;
 esac
 
@@ -223,16 +184,12 @@ case "$norm" in
 esac
 
 # ONE LINE PER FILE, not per write. The closer counts the lines of this marker and calls them
-# "file(s)", and the demand is scaled off that number - so without deduping, ONE file edited three
-# times reported "3 file(s)" and earned the full ritual. Measured by effect: three edits to a single
-# path produced the same text as three distinct files. The count has to mean what the message says.
+# "file(s)", and its threshold reads that number - the count has to mean what the message says.
 grep -qxF "$norm" "$marker" 2>/dev/null \
   || printf '%s\n' "$norm" >> "$marker" 2>/dev/null
 
 # CURRENCY signal. One open plan at a time: a plan whose work already shipped leaves the tree - git
 # keeps it - and a second one written beside it turns the directory into a pile of expired claims.
-# Measured on this project: two executed plans, 2780 lines, 94 unticked boxes describing shipped work,
-# and the index declaring both of them current.
 #
 # The test is UNTICKED BOXES, not the word "vigente"/"current": the signal has to hold in any language
 # the maintainers write in. It never blocks, and it stays narrow on purpose - it only fires while

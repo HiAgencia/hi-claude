@@ -66,45 +66,6 @@ project, and a rule lives in exactly one file.
 
 Plus, per closed item, its `(Done: …)` fulfilled with the evidence in view — not "it should work".
 
-## A register a PIECE can check
-
-A register nobody can verify is one that ages on its own: knowing what is closed means re-reading it
-whole and re-measuring by hand, so the session re-discovers, re-measures, and sometimes redoes. The
-way out is not a bigger register — it is making the register CHECKABLE, and that is a contract about
-how items are written, not a tool the method ships.
-
-Three invariants. None of them names a language, a runner or a test framework, because the register
-of a Rust project and of a content project are checked by different pieces and written the same way.
-
-1. **The runnable forms live in the PIECE, never in the item.** The project declares a small closed
-   set of shapes its checker knows how to run — a count that must equal N, a path that must exist, a
-   command whose exit code decides, a query whose result decides. A criterion only its author
-   understands is not verifiable, which is the defect being closed. A new shape is added to the piece.
-2. **What it cannot measure comes back as a THIRD state.** Not "open", not "done" — unmeasurable, with
-   the reason. Reading it as open makes the register look healthy by omission; reading it as done
-   deletes a live pending. A base that was locked and a criterion written for a test that does not
-   exist yet are both information, and neither is debt.
-3. **The count of criteria the piece cannot read is a CEILING THAT ONLY GOES DOWN.** Demanding the
-   shape retroactively leaves the suite red over work that is not the current session's, and an
-   inherited red is one everybody learns to ignore — which destroys the guard. Pinning the number
-   instead means rewriting one lowers it and a new badly-written one raises it and goes red on the
-   spot. The ceiling is MEASURED against the register, never estimated: set by feel it leaves invisible
-   slack for exactly the items it exists to catch.
-
-Two things that decide whether this pays, both measurable before committing to it:
-
-- **The denominator is the items that ADMIT a runnable criterion**, not the register. A route that
-  waits for the real world, a window, a decision or a dedicated measurement does not close with a
-  command, so demanding one produces a rewriting queue nobody can close and a number that says
-  nothing. On a register where most items are measurements or verifications, the checkable share is
-  small and the contract buys little — that is a reason to measure the split first.
-- **Coverage grows by USE, not by a dedicated pass.** Turning the criterion runnable is the first move
-  when TAKING an item. Measured on one register carried this way across ~1.400 commits, the share of
-  items with a runnable criterion sat at 3%: what the piece delivered was not a verified register but
-  an exact count of how much of it could not be verified, plus a number that could only fall. That is
-  worth having and it is not the same promise — saying which one is being bought is part of the
-  contract.
-
 ## Decisions that block
 
 A table of what needs the user's GO before its work can start, each with the place where its context

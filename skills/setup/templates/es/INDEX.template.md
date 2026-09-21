@@ -1,8 +1,5 @@
 # Índice de documentación — {{PROJECT_NAME}}
 
-> **hi-claude gobierna esta documentación.** Sus principios y sus criterios de redacción llegan solos
-> a cada sesión — acá no se copian.
->
 > Puerta de entrada a toda la documentación. **Un título dice qué hay adentro — leé títulos, abrí
 > archivos solo cuando haga falta.** Eso es lo que mantiene las sesiones baratas.
 > Regla: todo documento nuevo se agrega acá con una línea. Nada de docs sueltas.

@@ -1,8 +1,5 @@
 # Documentation index — {{PROJECT_NAME}}
 
-> **hi-claude governs this documentation.** Its principles and its writing criteria arrive on their
-> own at every session — they are not copied here.
->
 > Entry point to all documentation. **A title says what is inside — read titles, open files only when
 > you need them.** That is what keeps sessions cheap.
 > Rule: every new document gets one line here. No loose docs.

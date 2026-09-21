@@ -43,21 +43,20 @@ corrected when something changes.
 2. Read it fully. **If the split files are what you found, that is a BELONGING finding**: one subject
    across four files is a cost with nothing on the other side. Propose merging them, and propose it in
    this ORDER — rescue → verify the content IS in the destination → only then delete. Never the other
-   way round: measured, of 4 overlaps an audit called probable, 2 were false, and deleting on the
-   report alone lost the only access method to a system's single source.
+   way round: an overlap you report is a hypothesis, and deleting on the report alone loses whatever
+   lived only there.
 3. Check drift BOTH ways — the direction that costs is the second one:
 
 | Check | How |
 |---|---|
-| Installed and undeclared | Read `~/.claude/plugins/installed_plugins.json`; every plugin key must appear in the Plugins section. Compare the skills and MCP servers present in your own context against the Skills and MCP sections |
+| Installed and undeclared | Read `~/.claude/plugins/installed_plugins.json`; every plugin that LOADS HERE must appear in the Plugins section — an install with `scope: user`, or one whose `projectPath` is this project. A plugin installed for another project never loads in this one and is not drift. Compare the skills and MCP servers present in your own context against the Skills and MCP sections |
 | Declared and gone | A named entry that matches nothing installed sends the session looking for what is not there |
 | Proportional detail | A described block per tool the project USES; a name in the available list for the rest. Everything described equally is an inventory nobody reads — flag it |
 | Capability without evidence | A described block claims what a tool does without saying what was observed. Under the OBJECTIVE principle a capability is a fact with its evidence; flag claims that were never tested and say so |
 | Limit declared | A described block that states only what works, never what it costs or where it stops. The observed limit is what saves the next session |
-| Sovereignty in the first block | Each document opens declaring that hi-claude governs it |
 | Closed verdicts | "does not work", "impossible", "no sirve" about a tool — breaks NON-CONDITIONING. It is `not observed when recorded`, with what would reopen it |
 
-4. 🚨 **Overrides everything**: a token, key or credential written into an inventory entry. Report
+4. **Overrides everything**: a token, key or credential written into an inventory entry. Report
    first.
 
 ## Output (exact structure)
@@ -66,7 +65,7 @@ A letter would be a verdict of value on the user's own project. Report what was 
 
 ```
 COUNTED: <n> declared · <n> installed and undeclared · <n> declared and gone · <n> described without evidence · <n> files the inventory is split across
-CRITICAL: <🚨 or "none">
+CRITICAL: <what and where, or "none">
 FINDINGS (top 2): each → [file:line] <what was observed> — WHY — FIX: <the exact line to add, correct or delete>
 HELD: <count>
 POSITIVE: <1-2 entries that carry their measurement and their limit, by name>

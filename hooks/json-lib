@@ -15,11 +15,10 @@ escape_for_json() {
 # tool_input serializes file_path/command before content, so a key embedded
 # in the content cannot shadow the real one.
 #
-# The value may contain ESCAPED QUOTES, so it cannot be read as "up to the next quote". Measured:
-# with `[^"]*` the value was cut at the first `\"`, which truncated every Bash command carrying
-# quotes — and a truncated command matches no rule. Three guarantees were silently evaded by simply
-# quoting the command: the ask on CLAUDE.md, the ask on memory, and the subagent write block. The
-# bench never saw it because all of its Bash cases were unquoted.
+# The value may contain ESCAPED QUOTES, so it cannot be read as "up to the next quote": with `[^"]*`
+# the value is cut at the first `\"`, which truncates every Bash command carrying quotes — and a
+# truncated command matches no rule, so quoting the command evades every guarantee that reads it. The
+# bench carries quoted Bash cases for that reason.
 #
 # Only `\"` is unescaped here: Windows paths arrive with DOUBLED backslashes and several call sites
 # already collapse them themselves, so touching `\\` would break the contract they rely on.

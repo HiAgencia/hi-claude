@@ -1,9 +1,6 @@
 <!-- Generado por hi-claude. Foto viva de lo que HAY. -->
 # ESTADO — {{PROJECT_NAME}}
 
-> **hi-claude gobierna esta foto.** Sus principios y sus criterios de redacción llegan solos a cada
-> sesión — acá no se copian.
->
 > Foto ÚNICA de lo que existe hoy. Cuando algo cambia se ACTUALIZA acá mismo, para que ninguna sesión
 > futura reconstruya lo que ya está hecho ni rompa lo que funciona. **No acumula histórico**: nada de
 > "antes/ahora", nada de crónicas de lo que se cambió.

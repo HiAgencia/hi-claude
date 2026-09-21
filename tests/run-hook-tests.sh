@@ -18,7 +18,13 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   printf '       Wait for it to finish, or remove that directory if no run is alive.\n'
   exit 2
 fi
-trap 'rm -rf "$LOCK" 2>/dev/null' EXIT INT TERM
+# THE BENCH DOES NOT READ THE MACHINE IT RUNS ON. `session-start` looks at the user's global CLAUDE.md to
+# decide whether the Constitution rides along, so on a machine that already carries the principles block
+# every "injects the method" check would go red over a correct hook. An empty config dir pins the
+# default; the cases that need a global file or a plugin registry build their own and override this.
+BENCH_CFG="$(mktemp -d)"
+export CLAUDE_CONFIG_DIR="$BENCH_CFG"
+trap 'rm -rf "$LOCK" "$BENCH_CFG" 2>/dev/null' EXIT INT TERM
 
 ok()  { printf 'PASS  %s\n' "$1"; pass=$((pass+1)); }
 ko()  { printf 'FAIL  %s\n      got: %s\n' "$1" "$(printf '%s' "$2" | head -c 300)"; fail=$((fail+1)); }
@@ -120,6 +126,13 @@ stop_for() {
   printf '%s' "$FIX/.stop-$1.json"
 }
 
+# arm_debt -> arms TESTSESS with a debt ABOVE the closer's threshold. The closer stays silent below it,
+# so a check that arms one file and then expects silence passes for the wrong reason, and one that
+# expects a block fails for the wrong reason. Every settle / does-not-settle check starts from here.
+arm_debt() {
+  arm_files TESTSESS 'C:\\\\proj\\\\src\\\\a.js' 'C:\\\\proj\\\\src\\\\b.js' 'C:\\\\proj\\\\src\\\\c.js'
+}
+
 # --- json-lib ---
 . "$ROOT/hooks/json-lib"
 out=$(escape_for_json 'a"b
@@ -141,7 +154,34 @@ proj2=$(mktemp -d)
 f2=$(fixture_with_cwd session-start.json "$proj2")
 check "session-start: no roadmap, no noise" session-start "$f2" notcontains "## Open work (docs/ROADMAP.md)"
 check "session-start: still injects method" session-start "$f2" contains "hi-claude-method"
-rm -rf "$proj2" "$f2"
+
+# --- one rule, one file: with the principles in the GLOBAL CLAUDE.md the Constitution stays home ---
+# Both directions in the same run. The markers are what decides, never the language of the block.
+gcfg=$(mktemp -d)
+printf '# Global\n\n<!-- hi-claude:principios -->\n## Los siete principios\n<!-- /hi-claude:principios -->\n' > "$gcfg/CLAUDE.md"
+with_global() { CLAUDE_CONFIG_DIR="$gcfg" bash "$ROOT/hooks/session-start" < "$1" 2>/dev/null || true; }
+out=$(with_global "$f2")
+[ -z "$out" ] && ok "session-start: principles in the global file and nothing else to say, silent" \
+              || ko "session-start: principles in the global file and nothing else to say, silent" "$out"
+projg=$(make_project); fg=$(fixture_with_cwd session-start.json "$projg")
+out=$(with_global "$fg")
+printf '%s' "$out" | grep -qF "hi-claude-method" \
+  && ko "session-start: the Constitution is not injected twice" "$out" \
+  || ok "session-start: the Constitution is not injected twice"
+printf '%s' "$out" | grep -qF "Sellar el kickoff con hora" \
+  && ok "session-start: open work still rides along without the Constitution" \
+  || ko "session-start: open work still rides along without the Constitution" "$out"
+# A global file WITHOUT the markers is the user who declined the block: the fallback has to hold.
+printf '# Global\n\nsome rules of mine\n' > "$gcfg/CLAUDE.md"
+printf '%s' "$(with_global "$f2")" | grep -qF "hi-claude-method" \
+  && ok "session-start: a global file without the block keeps the fallback" \
+  || ko "session-start: a global file without the block keeps the fallback" "no method injected"
+for lang in es en; do
+  grep -qF '<!-- hi-claude:principios -->' "$ROOT/skills/setup/templates/$lang/PRINCIPLES.template.md" \
+    && ok "template $lang: the principles block carries the marker the start looks for" \
+    || ko "template $lang: the principles block carries the marker the start looks for" "missing"
+done
+rm -rf "$proj2" "$f2" "$gcfg" "$projg" "$fg"
 
 # A workspace that HOLDS repos keeps its register one level in. A session opened at the root used
 # to see nothing at all — measured in this very repo-pair.
@@ -264,9 +304,9 @@ for c in "echo x > /c/proj/src/a.py" "git commit -m x" "cp /tmp/x /c/proj/src/a.
 done
 [ "$idiom_bad" -eq 0 ] && ok "subagent: a redirection that writes nothing is not a write"
 
-# --- the count means FILES, because that is what the message says and what the scale reads ---
-# One file edited three times reported "3 file(s)" and earned the seven-step ritual. The threshold is
-# calibrated on a distribution of FILES, so a counter of write EVENTS miscalibrates it by construction.
+# --- the count means FILES, because that is what the message says and what the threshold reads ---
+# The threshold is set on a distribution of FILES, so a counter of write EVENTS miscalibrates it by
+# construction: one file edited three times is ONE file, and it stays below the threshold.
 # The Stop fixture has to carry the SAME session as the writes, or the closer reads an empty marker
 # and the assertion measures nothing while looking exactly like a failure.
 count_of() {
@@ -276,12 +316,9 @@ count_of() {
         "${TMPDIR:-/tmp}/hi-claude-turn-CNTSESS" "${TMPDIR:-/tmp}/hi-claude-size-CNTSESS"
 }
 out=$(count_of 'C:\\\\proj\\\\src\\\\a.py' 'C:\\\\proj\\\\src\\\\a.py' 'C:\\\\proj\\\\src\\\\a.py')
-printf '%s' "$out" | grep -qF 'changed 1 file' \
-  && ok "tracker: three edits to ONE file count as one" \
-  || ko "tracker: three edits to ONE file count as one" "$out"
-printf '%s' "$out" | grep -qF 'IN THIS ORDER' \
-  && ko "closer: a one-file turn does not earn the ritual by repetition" "$out" \
-  || ok "closer: a one-file turn does not earn the ritual by repetition"
+[ -z "$out" ] \
+  && ok "tracker: three edits to ONE file count as one, below the threshold" \
+  || ko "tracker: three edits to ONE file count as one, below the threshold" "$out"
 out=$(count_of 'C:\\\\proj\\\\src\\\\a.py' 'C:\\\\proj\\\\src\\\\b.py' 'C:\\\\proj\\\\src\\\\c.py')
 printf '%s' "$out" | grep -qF 'changed 3 file' \
   && ok "tracker: three DIFFERENT files still count as three" \
@@ -294,8 +331,11 @@ printf '%s' "$out" | grep -qF 'changed 3 file' \
 level_bad=0
 lvl() {
   rm -f "${TMPDIR:-/tmp}/hi-claude-turn-LVLSESS" "${TMPDIR:-/tmp}/hi-claude-size-LVLSESS"
-  printf '{"session_id":"LVLSESS","cwd":"C:\\\\ws","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\\\ws\\\\repo\\\\src\\\\a.py","content":"x"},"tool_response":{}}' > "$FIX/.lvl-probe.json"
-  run_hook tracker "$FIX/.lvl-probe.json" >/dev/null
+  # Three files, so the debt sits ABOVE the closer's threshold before the register candidate is written.
+  for src in a b c; do
+    printf '{"session_id":"LVLSESS","cwd":"C:\\\\ws","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\\\ws\\\\repo\\\\src\\\\%s.py","content":"x"},"tool_response":{}}' "$src" > "$FIX/.lvl-probe.json"
+    run_hook tracker "$FIX/.lvl-probe.json" >/dev/null
+  done
   printf '{"session_id":"LVLSESS","cwd":"C:\\\\ws","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"%s","content":"x"},"tool_response":{}}' "$1" > "$FIX/.lvl-probe.json"
   run_hook tracker "$FIX/.lvl-probe.json" >/dev/null
   printf '{"session_id":"LVLSESS","cwd":"C:\\\\ws","hook_event_name":"Stop","stop_hook_active":false}' > "$FIX/.lvl-stop.json"
@@ -376,46 +416,21 @@ check "background: the nudge is not a decision" guardian "$FIX/main-bash-long.js
 printf '%s\n' '{"session_id":"S","agent_id":"a1","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"pytest tests/ -q"}}' > "$FIX/subagent-bash-pytest.json"
 check "background: a subagent testing is untouched" guardian "$FIX/subagent-bash-pytest.json" empty
 
-# --- seeding doubts fires ITSELF after a big block ---
-# Measured on delegation and on the writing rules: a description never fires where nothing feels
-# like it needs a skill, and finishing well is exactly that moment. So it arrives as an offer.
-# TWO conditions, not one: the turn was big AND it CLOSED work (it wrote the register). Measured over
-# this project's own history, size alone fires on 4 of 8 work blocks — an offer that shows up half the
-# time is one that gets ignored.
-SZ="${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
-MK="${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
-rm -f "$SZ" "$MK"
-i=0; while [ $i -lt 7 ]; do run_hook tracker "$FIX/post-write-code.json" >/dev/null; i=$((i+1)); done
-out=$(run_hook closer "$FIX/stop.json")
-printf '%s' "$out" | grep -qF 'seeding-doubts' && ko "premortem: size alone is not enough" "$out" \
-                                              || ok "premortem: size alone is not enough"
-rm -f "$SZ" "$MK"
-i=0; while [ $i -lt 7 ]; do run_hook tracker "$FIX/post-write-code.json" >/dev/null; i=$((i+1)); done
+# --- the closer offers nothing on its own: the inverse pre-mortem lives in the skill and the prompt signal ---
+arm_debt
 run_hook tracker "$FIX/post-write-roadmap.json" >/dev/null
-out=$(run_hook closer "$FIX/stop.json")
-printf '%s' "$out" | grep -qF 'seeding-doubts' && ok "premortem: big block + closed work gets the offer" \
-                                              || ko "premortem: big block + closed work gets the offer" "$out"
-printf '%s' "$out" | grep -qF '"decision"' && ko "premortem: it offers, never blocks" "$out" \
-                                           || ok "premortem: it offers, never blocks"
-printf '%s' "$out" | grep -qF '"hookEventName": "Stop"' && ok "premortem: rides the Stop envelope" \
-                                                        || ko "premortem: rides the Stop envelope" "$out"
-rm -f "$SZ" "$MK"
-run_hook tracker "$FIX/post-write-code.json" >/dev/null
-run_hook tracker "$FIX/post-write-roadmap.json" >/dev/null
-check "premortem: a small closed turn stays silent" closer "$FIX/stop.json" empty
-rm -f "$SZ" "$MK"
+check "closer: a closed block of any size stays silent" closer "$FIX/stop.json" empty
+grep -qF 'seeding-doubts' "$ROOT/hooks/closer" \
+  && ko "closer: carries no pre-mortem offer" "still mentions seeding-doubts" \
+  || ok "closer: carries no pre-mortem offer"
 
 # --- the closer closes the WHOLE loop, not just the register ---
 # The rule is "every change updates docs, memory, the inventory, CLAUDE.md and the register". A
 # closer that names only the register silently drops the other four.
 #
-# The demand is SCALED to the size of the turn, so this block has to arm one ABOVE the threshold.
-# Arming a single file would assert the full loop against the short text and report a regression that
-# is not one - the same shape of false red the bench exists to avoid.
-#
 # THREE DISTINCT PATHS, not the same fixture three times: the marker holds one line per FILE, so
-# repeating one path arms a turn of ONE file and lands on the short branch.
-arm_files TESTSESS 'C:\\\\proj\\\\src\\\\a.js' 'C:\\\\proj\\\\src\\\\b.js' 'C:\\\\proj\\\\src\\\\c.js'
+# repeating one path arms ONE file and stays below the threshold.
+arm_debt
 out=$(run_hook closer "$FIX/stop.json")
 for part in ROADMAP inventory memory CLAUDE.md EFFECT; do
   printf '%s' "$out" | grep -qF "$part" && ok "closer: demands $part" || ko "closer: demands $part" "$out"
@@ -432,40 +447,23 @@ printf '%s' "$out" | grep -qF 'NOT PRUNED IN THIS TURN' \
   && ok "closer: spares what this turn produced" || ko "closer: spares what this turn produced" "$out"
 rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
 
-# --- the demand is SCALED: a small turn is not charged a seven-step ritual ---
-# Measured over 563 real blocks: 224 of them (40%) fired over ONE file and 57% over one or two. After
-# a one-file block the turn wrote NOTHING a quarter of the time, having spent a median of 6 assistant
-# messages re-auditing to conclude nothing applied. A demand that usually finds nothing gets answered
-# without looking, which costs the guarantee - so the scale is part of the guarantee, not a comfort.
+# --- the debt ACCUMULATES: a small turn passes, and the block lands when the session gathers enough ---
+# The marker is keyed by SESSION and the closer leaves it in place below the threshold, so nothing is
+# forgiven - it is deferred until it is worth a block. Both directions in the same run.
+arm_files TESTSESS 'C:\\\\proj\\\\src\\\\a.js' 'C:\\\\proj\\\\src\\\\b.js'
+check "closer: a two-file turn does not block" closer "$FIX/stop.json" empty
+[ -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" ] \
+  && ok "closer: below the threshold the debt stays" \
+  || ko "closer: below the threshold the debt stays" "the marker was cleared"
+# A LATER turn brings the third file: no `arm_files` here, which would reset the marker.
 run_hook tracker "$FIX/post-write-code.json" >/dev/null
-small=$(run_hook closer "$FIX/stop.json")
-printf '%s' "$small" | grep -qF '"decision": "block"' \
-  && ok "closer: a small turn still blocks" || ko "closer: a small turn still blocks" "$small"
-printf '%s' "$small" | grep -qF 'Three questions' \
-  && ok "closer: a small turn gets the short demand" || ko "closer: a small turn gets the short demand" "$small"
-printf '%s' "$small" | grep -qF 'WHAT DID THIS MAKE FALSE' \
-  && ok "closer: the short demand still asks what expired FIRST" \
-  || ko "closer: the short demand still asks what expired FIRST" "$small"
-# SCALING IS NOT DROPPING DESTINATIONS. Closing a small `[C]` item is BY DEFINITION a small turn, and
-# that is exactly when the live picture has to change - so a short demand that names only the register
-# removes the pointer where it is most needed. Measured on the first version of this branch: the live
-# picture, the inventory, memory and CLAUDE.md appeared ONLY in the long text.
-for part in "live picture" "inventory" "memory" "CLAUDE.md"; do
-  printf '%s' "$small" | grep -qF "$part" \
-    && ok "closer: the short demand still names the $part" \
-    || ko "closer: the short demand still names the $part" "$small"
-done
-# The whole point is that it is SHORTER. If the ritual leaks into the small branch the scale is a
-# comment, not a behaviour.
-printf '%s' "$small" | grep -qF 'IN THIS ORDER' \
-  && ko "closer: a small turn is spared the ritual" "$small" \
-  || ok "closer: a small turn is spared the ritual"
-rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
+check "closer: the third file across turns blocks" closer "$FIX/stop.json" contains '"decision": "block"'
+rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS"
 # A document leaves the tree through the shell, which no PostToolUse write hook ever sees. Without
 # the index settling the debt, a turn that PRUNED stayed in debt and the only way out was to write
 # something new - the accumulation incentive, intact.
 printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\docs\\INDEX.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-index.json"
-run_hook tracker "$FIX/post-write-code.json" >/dev/null
+arm_debt
 run_hook tracker "$FIX/post-write-index.json" >/dev/null
 check "closer: correcting the index settles the debt too" closer "$FIX/stop.json" empty
 rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
@@ -533,7 +531,7 @@ grep -q "Nothing is pruned in the turn that produced it" "$CON" \
   && ok "constitution: carries the distance rule" || ko "constitution: carries the distance rule" "missing"
 # Writing an inventory document settles the debt too, or the loop can never be closed.
 printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\docs\\PLUGINS.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-inventory.json"
-run_hook tracker "$FIX/post-write-code.json" >/dev/null
+arm_debt
 run_hook tracker "$FIX/post-write-inventory.json" >/dev/null
 check "closer: updating the inventory settles the debt" closer "$FIX/stop.json" empty
 
@@ -585,28 +583,30 @@ grep -qi "distance rule" "$ROOT/agents/currency-auditor.md" \
 # remembering. `plugin.json` declares a version and this goes red if the skill does not name it, so
 # revisiting the panorama becomes a condition for shipping instead of a step somebody recalls — the
 # same mechanic as a ceiling that only goes down: what cannot be forgotten is what breaks the run.
-UPD="$ROOT/skills/update/SKILL.md"
+# The panorama lives inside `audit` as its `adoption` target: one skill asks about the project, with two
+# questions - is it healthy, and what is it not using. A second skill for the second question was one
+# more description competing for the same phrasings.
+UPD="$ROOT/skills/audit/SKILL.md"
+[ -d "$ROOT/skills/update" ] \
+  && ko "adoption: there is no separate update skill" "skills/update still exists" \
+  || ok "adoption: there is no separate update skill"
 pv=$(grep -m1 '"version"' "$ROOT/.claude-plugin/plugin.json" \
      | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')
-if grep -qF "$pv" "$UPD"; then
-  ok "update: the panorama names the version it ships with ($pv)"
+if grep -qF "Version that carries this panorama: $pv" "$UPD"; then
+  ok "adoption: the panorama names the version it ships with ($pv)"
 else
-  ko "update: the panorama names the version it ships with" "$pv missing from skills/update/SKILL.md"
+  ko "adoption: the panorama names the version it ships with" "$pv missing from skills/audit/SKILL.md"
 fi
-# If it starts reporting health it IS audit under another name, and the difference in focus is the
-# entire reason it exists. The description has to say so where the model reads it.
-grep -qF "hi-claude:audit" "$UPD" \
-  && ok "update: it says out loud what it is NOT" \
-  || ko "update: it says out loud what it is NOT" "nothing disambiguates it from audit"
 # An item without its measurement is a suggestion, and a suggestion gets read once.
-n=$(grep -c '^\*\*How to measure it here' "$UPD" || true)
-[ "${n:-0}" -ge 3 ] \
-  && ok "update: every item carries how to measure it BY EFFECT ($n)" \
-  || ko "update: every item carries how to measure it BY EFFECT" "only $n"
+items=$(grep -c '\*Do:\*' "$UPD" || true)
+n=$(grep -c '\*Measure:\*' "$UPD" || true)
+[ "${n:-0}" -ge 3 ] && [ "${n:-0}" -eq "${items:-0}" ] \
+  && ok "adoption: every item carries how to measure it BY EFFECT ($n of $items)" \
+  || ko "adoption: every item carries how to measure it BY EFFECT" "$n measures for $items items"
 # The filter that keeps it from becoming the changelog it replaces.
 grep -qF "asks something OF THE PROJECT" "$UPD" \
-  && ok "update: only what asks something of the project enters" \
-  || ko "update: only what asks something of the project enters" "the filter is not written down"
+  && ok "adoption: only what asks something of the project enters" \
+  || ko "adoption: only what asks something of the project enters" "the filter is not written down"
 
 # --- memory protocol knows BOTH axes ---
 grep -q "WRITING axis" "$ROOT/skills/memory-protocol/SKILL.md" \
@@ -660,6 +660,39 @@ printf '%s' "$out" | grep -qF "beta-tool" \
 printf '%s' "$out" | grep -qF "Inventory drift (docs/INVENTARIO.md)" \
   && ok "inventory: the notice names the document it read" \
   || ko "inventory: the notice names the document it read" "$out"
+# ONLY WHAT LOADS HERE is drift. The registry lists every install on the machine; a plugin scoped to
+# another project never loads in this one, and naming it teaches the project to declare tools it
+# cannot use just to silence the notice. Both directions, and a pretty-printed registry on purpose:
+# the cases above run through a single-line one.
+cat > "$inv/cfg/plugins/installed_plugins.json" <<REG
+{
+  "version": 2,
+  "plugins": {
+    "alpha-tool@some-market": [
+      { "scope": "user" }
+    ],
+    "elsewhere-tool@some-market": [
+      {
+        "scope": "project",
+        "projectPath": "C:\\\\Users\\\\someone\\\\another-project"
+      }
+    ],
+    "here-tool@some-market": [
+      {
+        "scope": "project",
+        "projectPath": "$inv"
+      }
+    ]
+  }
+}
+REG
+out=$(CLAUDE_CONFIG_DIR="$inv/cfg" bash "$ROOT/hooks/session-start" < "$fi_" 2>/dev/null)
+printf '%s' "$out" | grep -qF "elsewhere-tool" \
+  && ko "inventory: a plugin scoped to another project is not drift" "$out" \
+  || ok "inventory: a plugin scoped to another project is not drift"
+printf '%s' "$out" | grep -qF "here-tool" \
+  && ok "inventory: a plugin scoped to THIS project is drift" \
+  || ko "inventory: a plugin scoped to THIS project is drift" "$out"
 rm -rf "$inv" "$fi_"
 
 # --- delegation: the protocol arrives at the dispatch and at the RETURN ---
@@ -688,27 +721,68 @@ run_hook tracker "$FIX/post-write-temp.json" >/dev/null
 run_hook tracker "$FIX/post-write-code.json" >/dev/null
 [ -f "$MARK" ] && ok "tracker: a code write records the debt" || ko "tracker: a code write records the debt" "no marker"
 
-check "closer: blocks a turn that left the register stale" closer "$FIX/stop.json" contains '"decision": "block"'
+arm_debt
+out=$(run_hook closer "$FIX/stop.json")
+printf '%s' "$out" | grep -qF '"decision": "block"' \
+  && ok "closer: blocks a session that left the register stale" \
+  || ko "closer: blocks a session that left the register stale" "$out"
 # Blocking must be TOP-LEVEL for Stop: a hookSpecificOutput envelope fails validation silently.
-check "closer: block is not wrapped in an envelope"        closer "$FIX/stop.json" notcontains "hookSpecificOutput"
+printf '%s' "$out" | grep -qF "hookSpecificOutput" \
+  && ko "closer: block is not wrapped in an envelope" "$out" \
+  || ok "closer: block is not wrapped in an envelope"
 # It cleared the marker as it blocked, so the next stop passes: a guarantee that traps is not one.
 check "closer: never blocks twice in a row"                closer "$FIX/stop.json" empty
 
-run_hook tracker "$FIX/post-write-code.json" >/dev/null
+arm_debt
 check "closer: honours stop_hook_active"                   closer "$FIX/stop-active.json" empty
 
-run_hook tracker "$FIX/post-write-code.json" >/dev/null
+arm_debt
 run_hook tracker "$FIX/post-write-roadmap.json" >/dev/null
 check "closer: updating the register settles the debt"     closer "$FIX/stop.json" empty
 rm -f "$MARK"
 
-# --- sovereignty: every generated text says what rules it is under ---
-# A text that does not declare its rules gets its form re-litigated every session.
-miss=$(grep -L "hi-claude" "$ROOT"/skills/setup/templates/*/*.md 2>/dev/null | wc -l)
-[ "$miss" -eq 0 ] && ok "sovereignty: every template declares it" \
-                  || ko "sovereignty: every template declares it" "$miss templates without it"
-grep -q "hi-claude governs what persists here" "$ROOT/skills/memory-protocol/references/memory-schema.md" \
-  && ok "sovereignty: memory schema declares it" || ko "sovereignty: memory schema declares it" "missing"
+# --- the method is stated ONCE, not stamped on every generated file ---
+# The principles live in the user's global CLAUDE.md. A banner repeated at the top of every template is
+# the same sentence paid in every document a session opens, and a project CLAUDE.md that restates the
+# method is a second copy that drifts.
+n=$(grep -li "hi-claude govern\|hi-claude gobierna" "$ROOT"/skills/setup/templates/*/*.md \
+      "$ROOT/skills/memory-protocol/references/memory-schema.md" 2>/dev/null | wc -l)
+[ "$n" -eq 0 ] && ok "one statement: no template stamps a sovereignty banner" \
+               || ko "one statement: no template stamps a sovereignty banner" "$n files still carry it"
+for lang in es en; do
+  t="$ROOT/skills/setup/templates/$lang/CLAUDE.template.md"
+  grep -qE 'PREFERENTIAL|PREFERENCIAL|MEMORY_PATH' "$t" \
+    && ko "template $lang: the project CLAUDE.md does not restate the method" "principles or memory section still in it" \
+    || ok "template $lang: the project CLAUDE.md does not restate the method"
+done
+
+# --- the plugin's own text obeys what it asks: the rule travels without its history ---
+# The anecdotal FORM is what gets imitated - a capitalised `Measured` opening a sentence, or `measured,`
+# followed by its figure. The lowercase word inside a rule is legitimate, so counting it would go red
+# over correct text.
+n=$(grep -rE 'Measured|measured, ' "$ROOT/hooks" "$ROOT/skills" "$ROOT/agents" 2>/dev/null | wc -l)
+[ "$n" -eq 0 ] && ok "doctrine: no rule in the shipped surface carries its anecdote" \
+               || ko "doctrine: no rule in the shipped surface carries its anecdote" "$n lines"
+# What the plugin EMITS and GENERATES carries no emoji; hierarchy is done with text labels. The
+# roadmap auditor names one as a PATTERN TO DETECT, which is reading, not emitting.
+n=$(grep -rlE '🚨|📋|🧠|🗺|📁|🧰|🕰|⚠|❌|🔴' "$ROOT/hooks" "$ROOT/skills" "$ROOT/agents" 2>/dev/null | wc -l)
+[ "$n" -eq 0 ] && ok "doctrine: nothing emitted or generated carries an emoji" \
+               || ko "doctrine: nothing emitted or generated carries an emoji" "$n files"
+
+# --- the writing rules arrive ONCE per turn ---
+mdturn() { printf '{"hook_event_name":"PreToolUse","session_id":"MDSESS","prompt_id":"P1","cwd":"C:\\\\proj","tool_name":"Edit","tool_input":{"file_path":"C:\\\\proj\\\\docs\\\\GUIA.md","old_string":"a","new_string":"b"}}' \
+           | bash "$ROOT/hooks/guardian" 2>/dev/null; }
+rm -f "${TMPDIR:-/tmp}/hi-claude-md-MDSESS-P1"
+printf '%s' "$(mdturn)" | grep -qF 'TIMELESS' \
+  && ok "guardian: the first doc write of a turn gets the rules" \
+  || ko "guardian: the first doc write of a turn gets the rules" "silent"
+[ -z "$(mdturn)" ] && ok "guardian: the second doc write of the same turn stays silent" \
+                   || ko "guardian: the second doc write of the same turn stays silent" "repeated"
+run_hook closer "$(stop_for MDSESS)" >/dev/null
+[ -e "${TMPDIR:-/tmp}/hi-claude-md-MDSESS-P1" ] \
+  && ko "closer: the turn's writing-rules mark dies with the turn" "mark survived" \
+  || ok "closer: the turn's writing-rules mark dies with the turn"
+rm -f "$FIX/.stop-MDSESS.json"
 
 # --- OBJECTIVE: an auditor reports a datum, not a verdict of value ---
 # A letter grade on the user's own files is a judgement; the rubrics already produce the number.
@@ -870,6 +944,48 @@ printf '%s' "$(psig 'algo anda mal y no se que')" | grep -qF 'DURABLE preference
 printf '%s' "$(psig 'Para la proxima, los reportes en una pagina')" | grep -qF 'seeding-doubts' \
   && ko "memory signal: a preference does not raise the doubts protocol" "signals bleed" \
   || ok "memory signal: a preference does not raise the doubts protocol"
+
+# --- the practices that arrive by PHRASE: each one fires, and its trap built from the same words stays silent ---
+# A regex does not correlate across languages, it matches what is written in it - so every signal is
+# asserted in Spanish AND in English.
+sig_case() {
+  local label="$1" needle="$2" want="$3" q="$4" out
+  out=$(psig "$q")
+  case "$want" in
+    fires)  printf '%s' "$out" | grep -qF "$needle" && ok "signal: $label" || ko "signal: $label" "${out:-silent}" ;;
+    silent) printf '%s' "$out" | grep -qF "$needle" && ko "signal: $label" "fired" || ok "signal: $label" ;;
+  esac
+}
+sig_case "a failure that came back (es)"           'CAME BACK' fires  'Sigue fallando el envio despues del cambio'
+sig_case "a failure that came back (en)"           'CAME BACK' fires  'It still fails after your fix'
+sig_case "a FIRST failure report is ordinary work" 'CAME BACK' silent 'Este test falla, arreglalo'
+sig_case "never happened before (es)"              'COMPARE'   fires  'Esto nunca me paso en mis otros proyectos'
+sig_case "never happened before (en)"              'COMPARE'   fires  'This never happened before with the old setup'
+sig_case "never USED something is not that"        'COMPARE'   silent 'Nunca use esta libreria, explicame como arranca'
+sig_case "the user repeating themselves (es)"      'REPEATING' fires  'Ya te lo dije: las tablas van sin bordes'
+sig_case "the user repeating themselves (en)"      'REPEATING' fires  'I already told you, no borders on tables'
+sig_case "counting times is not repeating"         'REPEATING' silent 'Cuantas veces corre este cron por dia?'
+# Two signals in one prompt both arrive: they are separate moments, not alternatives.
+out=$(psig 'Ya te lo dije y sigue fallando igual')
+printf '%s' "$out" | grep -qF 'CAME BACK' && printf '%s' "$out" | grep -qF 'REPEATING' \
+  && ok "signal: two moments in one prompt both arrive" \
+  || ko "signal: two moments in one prompt both arrive" "${out:-silent}"
+
+# --- the consultation carries the ADMISSION questions, not just "confirm the change" ---
+check "guardian: the CLAUDE.md ask puts admission in front" guardian "$FIX/write-claude-md.json" contains "ADMISSION, before confirming"
+check "guardian: the memory ask puts admission in front"    guardian "$FIX/edit-memory.json"     contains "ADMISSION, before confirming"
+
+# --- a document is edited with the edit tool, never with a script ---
+mdq() { printf '{"hook_event_name":"PreToolUse","session_id":"TESTSESS","cwd":"C:\\\\proj","tool_name":"Bash","tool_input":{"command":"%s"}}' "$1" \
+        | bash "$ROOT/hooks/guardian" 2>/dev/null; }
+printf '%s' "$(mdq "sed -i s/a/b/ docs/GUIA.md")" | grep -qF 'NEVER WITH A SCRIPT' \
+  && ok "guardian: sed -i over a document gets the edit-tool rule" \
+  || ko "guardian: sed -i over a document gets the edit-tool rule" "silent"
+# Moving a document is not editing it: the rule must not ride on a rename.
+printf '%s' "$(mdq "mv docs/A.md docs/B.md")" | grep -qF 'NEVER WITH A SCRIPT' \
+  && ko "guardian: moving a document is not editing it" "fired" \
+  || ok "guardian: moving a document is not editing it"
+check "guardian: the edit tool itself gets no script rule" guardian "$FIX/write-markdown-doc.json" notcontains "NEVER WITH A SCRIPT"
 
 # --- json_str: a value carrying ESCAPED QUOTES is not truncated ---
 # Measured: reading the value as "up to the next quote" cut every Bash command that carried quotes,
@@ -1102,12 +1218,12 @@ esac
 # correctly and the hook kept demanding, with nothing anywhere saying why.
 printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\ROADMAP.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-root-roadmap.json"
 printf '%s\n' '{"session_id":"TESTSESS","cwd":"C:\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"C:\\proj\\node_modules\\smart-buffer\\docs\\ROADMAP.md","content":"x"},"tool_response":{}}' > "$FIX/post-write-vendor-roadmap.json"
-run_hook tracker "$FIX/post-write-code.json"         >/dev/null
+arm_debt
 run_hook tracker "$FIX/post-write-root-roadmap.json" >/dev/null
 check "tracker: a register at the repo root settles the debt" closer "$FIX/stop.json" empty
 rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
 # A dependency ships registers of its own, and none of them is this project's.
-run_hook tracker "$FIX/post-write-code.json"           >/dev/null
+arm_debt
 run_hook tracker "$FIX/post-write-vendor-roadmap.json" >/dev/null
 check "tracker: a vendored ROADMAP does not settle" closer "$FIX/stop.json" contains '"decision": "block"'
 rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
@@ -1119,8 +1235,7 @@ rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-
 # DERIVED from cwd exactly as `session-start` derives what it injects.
 settles_from() {
   local label="$1" path="$2" want="$3" out
-  rm -f "${TMPDIR:-/tmp}/hi-claude-turn-TESTSESS" "${TMPDIR:-/tmp}/hi-claude-size-TESTSESS"
-  run_hook tracker "$FIX/post-write-code.json" >/dev/null
+  arm_debt
   printf '{"session_id":"TESTSESS","cwd":"C:\\\\proj","hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"%s","content":"x"},"tool_response":{}}' \
     "$path" > "$FIX/.settle-probe.json"
   run_hook tracker "$FIX/.settle-probe.json" >/dev/null

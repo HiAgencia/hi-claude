@@ -17,11 +17,30 @@ Constitution, which every session already carries — here is how a violation is
 | something that expires — a date, a state, a moment | the invariant behind it, or it goes unwritten |
 | a line already written that stopped being true, or that no future session would open | delete it — see PRUNED below; git keeps what leaves |
 
-- A measured result is a DATUM with its N and its method, REOPENABLE — never a closed verdict. What
-  was measured and not adopted is recorded with the evidence that closed it, and with the condition
-  that would reopen it.
+- **The rule travels WITHOUT its history.** A `CLAUDE.md`, a memory, a code comment and any document
+  that loads on its own carry the rule, the limit and the why. The evidence, its N and the case that
+  produced the rule live in the evidence document under `docs/`, and the rule points at its path when
+  the magnitude matters. An anecdote with its figure glued to a rule is a number that expires inside a
+  text that does not.
+- In the EVIDENCE document, a measured result is a DATUM with its N and its method, REOPENABLE — never
+  a closed verdict. What was measured and not adopted is recorded with the evidence that closed it, and
+  with the condition that would reopen it.
+- **A methodology still being MEASURED is traced in the register, not written into the design doc.** A
+  number that still moves stays out of the spec; what reproduced is stated with its N, what contradicted
+  itself across runs is recorded as CONTRADICTED — not averaged, not the run that looked best. The spec
+  gets the result when the measurement closes, in one pass, and that includes corrections to what it
+  already says.
+- **A theory the user states is written down BEFORE it is worked on**, in the document that governs it
+  and that CLAUDE.md names — if the next session has to ask for it, it was written, not kept.
+- **A name says what the thing IS or what it is FOR.** Never the adjective of the moment (`new`, `old`,
+  `current`, `previous`) — it expires and the name keeps lying without anything failing; `legacy` only
+  for what is really being retired. And a piece that will host several is never named after its first
+  tenant: name it by its owner or its function. The moment to ask is when CREATING it.
+- **A document is edited with the edit tool, never with a script.** Not `sed`, not an interpreter, not
+  a splice by line number: a script hits the line and misses the meaning, and the change cannot be
+  reviewed until it is done. A change too big for the edit tool is several changes.
 - Documentation does NOT accumulate history. Each line is judged by whether it serves a FUTURE
-  session. What describes what already happened — an executed plan, a "✅ done", the chronicle of what
+  session. What describes what already happened — an executed plan, a done-mark, the chronicle of what
   changed and why — is DELETED. Its design lives in the work itself and in the commits.
 - Pending vs context: a pending register (`ROADMAP.md`) carries only what is missing and how it
   relates to other pendings; when an item closes it is DELETED, not marked done. What is structural
@@ -66,9 +85,9 @@ A subfolder is only born once one subject already HAS several documents, and the
 the folder as a unit instead of each path.
 
 **The merge order — it does not get reordered:** rescue → verify the content IS in the destination →
-only then delete. Measured: of 4 overlaps an audit called probable, 2 were false, and deleting on the
-report alone lost the only access method to a system's single source. And what gets rescued is rarely
-about the folder it sat in — content lives where it was DISCOVERED, not where it belongs.
+only then delete. An overlap reported by an audit is a hypothesis: deleting on the report alone loses
+whatever lived only there. And what gets rescued is rarely about the folder it sat in — content lives
+where it was DISCOVERED, not where it belongs.
 
 **Moving is not pruning.** Carrying something to its home destroys nothing, so the distance rule does
 not hold it back: it can be done in the same turn. Deleting is what waits for closing evidence.
@@ -155,18 +174,55 @@ what this session touched first, then the files that load every time.
   working.
 - **Progressive disclosure.** The entry document says WHAT exists and WHERE; the detail opens when the
   task asks for it. A document that grows gets split by MOMENT OF USE, not by topic.
-- **Write the invariant, not the prohibition.** Contradictory pairs are forbidden ("document whatever
-  is needed" + "don't write comments"). When the form is unclear, the surrounding code rules: same
-  comment density, same names, same idiom.
-- **Rich reference before prose.** A failing test, the function to port, a captured production
-  payload, the real HTML — each is worth more than describing it. A spec IS a test.
-- **Expressive interface before example.** A flag, an enumerated state, a well-named parameter
-  (`shadow=1`, `state: draft→review→live`) teach their own use; an example NARROWS exploration to what
-  the example shows.
+- **Write the invariant, not the prohibition.** When the form is unclear, the surrounding code rules:
+  same comment density, same names, same idiom.
 
-## Neighbours
+## How a failure gets READ
 
-When the superpowers plugin is installed: planning a multi-step job → `superpowers:writing-plans`;
-declaring something finished → `superpowers:verification-before-completion`. This skill does not
-repeat their content. Without them the rules above still stand on their own — evidence before
-assertion either way.
+- **When the user says something fails, the first move is to OPEN the files that take part, whole, and
+  compare them with each other.** Theorising is allowed only IN ADDITION to reading, never instead of
+  it: the hypothesis is checked against the open code, not against a command's output or against what
+  is remembered of the script. Comparing two outputs and deducing the cause is what this forbids — the
+  output is the effect, the cause lives in the lines that were not opened.
+- **Before modifying a piece, read it whole, and with it every piece that feeds it or consumes it** —
+  what writes the table, what merges it, what dedupes it, what measures it, and their tests. A fix made
+  on the piece where the symptom showed is the next pass, not a fix.
+- "I read it earlier" does not count across a compaction or after a change: reopen it. And the control
+  of a new rule runs through the REAL write path, not through a case written by hand.
+- **When the user says "this never happened to me before", compare instead of explaining**: which
+  library, plugin or setting is here that was not there. It may end in "something here should change",
+  "this behaviour is the right one" or "the difference is real and wanted" — said with evidence, against
+  the official docs. Defending the default without having looked at what changed is the failure.
+
+## How it gets VERIFIED
+
+- **"Done" is said ONCE, with the WHOLE control green.** The suites of the touched files are not the
+  control. If the whole control is slow it runs in the background and "done" waits for its verdict.
+- A project's validations are ONE entry point with flags, named in its `CLAUDE.md`: it derives the
+  level from what was touched and states, per level, measured · not measured · could not be measured.
+- **A measurement without its control is worth nothing, and it looks exactly like a good one.** Before
+  believing a number, check that the control ran: the process that had to compete, the known case that
+  had to come back positive, the condition that had to fail.
+- **Fixing the instrument is not the work.** A control gets fixed when its error CHANGES A DECISION. If
+  the number is off and the decision comes out the same, it goes to the register and the work goes on.
+- **On a conflict between a document and a script, the DOCUMENT rules**: a stale script does not fail,
+  it returns a well-formed result. Before running anything that costs time, quota or traffic, open the
+  document that governs THAT decision — and if CLAUDE.md does not name it, add it there.
+- **A tool exists if it ANSWERS in this session**, not because a config file lists it.
+
+## What the agent settles on its own
+
+- What gets written is TRUE and VERIFIED. What is not verified gets VERIFIED; what cannot be, gets
+  DELETED. Leaving it in place with a warning is not a third way out: it hands the user a decision they
+  cannot check better than whoever found it.
+- The user's decisions are scope and taste, anything with outside cost, anything irreversible, and what
+  needs their hand. Which of two contradicting figures is right, whether a document went stale, what a
+  label is called — those are the agent's. Its own doubt does not turn a technical call into theirs.
+- What turns up beside the task and belongs to the same work gets done; a new front does not get opened.
+- **An error the user points at is a PATTERN, never one occurrence.** Fix it where they saw it · name
+  the pattern in a sentence that does not mention the case · sweep ALL the material for it, by SHAPE —
+  enumerate the members of the class and check each, because a search for the wrong word finds only
+  some · report what was swept and what turned up, zero included. Writing the rule down is not applying
+  it.
+- A session dedicated to ONE subject touches that subject only. Closing it includes its own register
+  and live picture; it does not include designing the next session.

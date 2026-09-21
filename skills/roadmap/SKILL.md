@@ -8,7 +8,7 @@ description: Use at the start of a session to recover what was in progress, when
 `docs/ROADMAP.md` is the single register of what is MISSING. `docs/ESTADO.md` (`STATE.md` in English
 projects) is the live picture of what EXISTS. Neither keeps a log.
 
-## The nine rules
+## The eight rules
 
 1. **An item is DELETED when it reaches 100%** — never marked done. If closing it changed the state of
    the system, that goes in-place into `ESTADO.md`. The design of what was built lives in the work
@@ -37,21 +37,19 @@ projects) is the live picture of what EXISTS. Neither keeps a log.
    to become true. It stays in the same file: migrating is moving a block, and a second file is a
    second place where something can expire unseen. The horizon does not ride into the session, so it
    costs nothing at startup and it is not a place to hide work that already started.
-9. **The register is written so a PIECE can check it**, and what that piece cannot read is a defect of
-   the ITEM. Three invariants, none of them tied to a language: the runnable forms live in the piece
-   and never in the item · what it cannot measure comes back as a THIRD state, never as "open" ·
-   and the count of criteria it cannot read is a ceiling that only goes DOWN. `references/roadmap-anatomy.md`
-   carries the contract and what it costs.
 
 ## When to touch it
 
-- **Taking work** → move the item into the open-work block and turn its criterion into something
-  runnable before writing anything else.
+- **Taking work** → write the item into the open-work block BEFORE starting, and turn its criterion
+  into something runnable before writing anything else. A session, a context or a machine can be cut
+  from one second to the next, and what was written down is all that survives.
 - **Pausing, or before a compaction** → leave what is missing and what is resolved, one line each. After
   a compaction that block is the only thing left of the thread.
-- **Closing** → delete the item; update `ESTADO.md` if the system changed. To declare something
-  finished, use `superpowers:verification-before-completion` when it is installed: evidence before
-  assertion, always.
+- **Closing** → delete the item; update `ESTADO.md` if the system changed; and carry the CONCLUSION to
+  the context document CLAUDE.md names — the register holds what is missing and gets pruned, so a
+  conclusion that lives only there is lost with the item. Evidence before assertion, always.
+- **While a measurement is OPEN** → its trace lives here — what was tried, what it gave, what is
+  missing — and nowhere in the design docs. The spec gets the result when the measurement closes.
 - **Discovering work** → new item in its thematic block. It only enters the open-work block if it
   starts now, and if it is not for this phase at all it goes to the HORIZON of that block, with the
   condition that brings it in. An open-work block that overflows the session budget is usually this:

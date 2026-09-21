@@ -3,8 +3,9 @@
 
 > **hi-claude governs this work** — the format, the practice, the retroactivity of every session. Its
 > seven principles, their four axes and the hierarchy that settles conflicts between them are defined in
-> `skills/memory-protocol/constitution.md`, which the session hook injects at every start. Where form,
-> criterion or scope is in doubt, hi-claude decides.
+> `skills/memory-protocol/constitution.md`, which the session hook injects when the user's global
+> CLAUDE.md does not carry the principles block. Where form, criterion or scope is in doubt, hi-claude
+> decides.
 
 Claude Code plugin packaging the hi-claude working method: seven principles on four axes with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work, every content with a declared destination instead of a new file, text that gets pruned when it stops being true, subagents that investigate and never decide, an inventory of what a project can use, a turn that does not end stale, and audits. This repo is BOTH the plugin and its marketplace.
 
@@ -13,14 +14,6 @@ Claude Code plugin packaging the hi-claude working method: seven principles on f
 1. **`docs/ESTADO.md`** — what exists: every hook, skill and auditor with what it guarantees, plus the contract gotchas that were measured rather than deduced.
 2. **`docs/ROADMAP.md`** — a pointer: open work for this plugin is kept in the maintainers' workspace, one level up, where both repos are visible. The runnable session-done criterion lives there, in its `§0`.
 3. **`docs/INDEX.md`** — everything else.
-
-## How to work here — the hi-claude method
-
-- Persistent memory lives in `~/.claude/projects/<slug>/memory/`; `MEMORY.md` is its index — consult it before non-trivial work, even when you think you remember.
-- Only TIMELESS, PREFERENTIAL, or LIMITING knowledge enters this file or memory — paths included: only timeless docs earn a reference here. Open work goes to `docs/ROADMAP.md`.
-- ALWAYS consult before saving/modifying/deleting in memory or this file.
-- Documentation does NOT live here: `docs/` with `docs/INDEX.md` as the entry point; this file only references paths.
-- Clean root; everything in its folder.
 
 ## Project structure
 
@@ -32,7 +25,7 @@ hooks/            hooks.json + run-hook.cmd (polyglot) + json-lib + one script p
                   role because an event can carry more than one: PostToolUse has `tracker` (turn
                   bookkeeping) and `report-received` (a subagent's report just came back)
 skills/           memory-protocol (+ constitution, references), roadmap (+ references),
-                  work-protocol, delegation, seeding-doubts, setup (+ templates es/en), audit
+                  work-protocol, delegation, seeding-doubts, heavy-runs, setup (+ templates es/en), audit
 agents/           read-only auditors (CLAUDE.md, memory, organization, ROADMAP, inventory, currency)
 BRAND/            Hi Agencia logo (white = dark mode, dark = light mode, used by README)
 docs/             ROADMAP.md, ESTADO.md, INDEX.md
@@ -60,9 +53,9 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 | skill: work-protocol | Writing docs, comments or commits; closing a problem |
 | skill: delegation | Dispatching a subagent, and again when its report comes back |
 | skill: seeding-doubts | Stuck on quality, or right after closing a big block |
+| skill: heavy-runs | Before a run that loads the machine, and before re-launching one |
 | skill: setup | Bootstrapping CLAUDE.md / docs / register / inventory from the es/en templates |
-| skill: audit (+ its six auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization, inventory and currency; run before each release |
-| skill: update | What this project is NOT using of what the plugin offers. Manual, run after updating. Its panorama is REWRITTEN every release and the bench goes red if it does not name the shipped version — so revisiting it is a condition for shipping, not a step someone recalls |
+| skill: audit (+ its six auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization, inventory and currency; run before each release. Its `adoption` panorama is REWRITTEN every release and the bench goes red if it does not name the shipped version |
 | `bash tests/run-hook-tests.sh` | After ANY change to a hook, a template marker, or the doctrine |
 | `claude plugin validate .claude-plugin/plugin.json` | After changing manifests, hooks, skills or agents. **Point it at the plugin.json, NOT at the directory**: given the directory it validates only the marketplace manifest and returns ✔ with a dead skill inside |
 | `plugin-dev` (agent `plugin-validator`) | Deeper structural review before a release, when the CLI check is not enough |

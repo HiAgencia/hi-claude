@@ -41,7 +41,7 @@ already standing, so a session arriving cold does not redo it — one line, rewr
    `/hi-claude:setup`.
 2. Locate `./docs/ESTADO.md` or `./docs/STATE.md`. Optional: its absence costs only its own criterion.
 3. Read both fully.
-4. Score the rubric (140 points):
+4. Score the rubric (136 points):
 
 | Criterion | Points | How to check |
 |---|---|---|
@@ -50,14 +50,13 @@ already standing, so a session arriving cold does not redo it — one line, rewr
 | No dates, no temporal language | 15 | date patterns, "hoy", "today", "esta sesión", "por ahora", "for now", "last week" |
 | Open-work block present, marked, ≤3 items | 15 | both `hi-claude:en-curso` markers present; count `###` headings inside the block AFTER dropping HTML comments. The block carries a commented item-format reminder whose own `###` is not an item, so counting raw over-reports by one on every register generated from the template — and the start-up hook already strips comments before deciding, so a rubric that does not is measuring a different block than the session sees |
 | Progress lines did not become a log | 15 | a `Ya resuelto:`/`Resolved:` spanning more than two lines, or turned into a bullet list |
-| No context embedded that OUTLIVES its item | 10 | The context a register carries is TEMPORARY: it lives while the item is OPEN and goes when the item closes. Flag evidence, measurements or reasoning that would survive the item — that belongs to the context document, and MOVING it there is not pruning. Judge each item against its NEIGHBOURS, not a fixed threshold, and never by parsing `###`: measured on a real register `### ` appeared 0 times while the volume lived in loose bullets of 800-2.052 ch, so an item-parsing rule measures nothing |
-| The register OSCILLATES | 5 | A healthy register goes up and down: work comes in, work closes. If git history is not available say so and skip; if it is, a size that only ever grew is the signal — measured on a real register, 99.060 → 853.468 bytes across three weeks without one drop |
+| No context embedded that OUTLIVES its item | 10 | The context a register carries is TEMPORARY: it lives while the item is OPEN and goes when the item closes. Flag evidence, measurements or reasoning that would survive the item — that belongs to the context document, and MOVING it there is not pruning. Judge each item against its NEIGHBOURS, not a fixed threshold, and never by parsing `###`: a register can hold its whole volume in loose bullets with no item heading at all, and an item-parsing rule then measures nothing |
+| The register OSCILLATES | 5 | A healthy register goes up and down: work comes in, work closes. If git history is not available say so and skip; if it is, a size that only ever grew is the signal |
 | Closing routes coherent | 10 | an unmarked (`[C]`) item whose own description requires a deploy, a real event, a window, or the user's GO |
 | Runnable `(Hecho: …)` / `(Done: …)` where the item admits one | 10 | proportion of items carrying a criterion; prose criteria do not count as runnable. THE DENOMINATOR IS THE ITEMS THAT ADMIT ONE: a route waiting on the real world, a window, a decision or a dedicated measurement does not close with a command, so counting it as missing produces a number that says nothing. An item you cannot judge is reported as a third state, never as missing |
 | The HORIZON holds what is not for now, and only that | 5 | Optional: its absence costs nothing, since a project with no far work needs none. When present, each item carries the CONDITION that brings it into production — a thing that has to become true, never a date — and none of them describes work that ALREADY STARTED, which is the one thing a horizon must not become. An open-work block over the session budget while the horizon is empty is the signal that far work is sitting where started work belongs |
 | §0 carries a runnable session-done criterion | 10 | present, and a command rather than a sentence |
 | ESTADO/STATE keeps no history, copies no live numbers | 5 | "antes/ahora", "before/after", chronicles of what changed, hardcoded counts that age on their own |
-| Sovereignty declared up front | 4 | The first block of each file states that hi-claude governs it |
 | Items written under the WRITING axis | 6 | An item that closes a door ("impossible", "ceiling", "no signal") instead of stating what was observed and what would reopen it; a cause asserted without evidence. Defined in the plugin's Constitution — do not redefine here |
 
 5. Total the points. Report the number and what it is out of — never a letter: a grade on the user's
@@ -76,8 +75,8 @@ already standing, so a session arriving cold does not redo it — one line, rewr
 ## Output (exact structure)
 
 ```
-SCORE: <points>/140 — <n> criteria met, <n> with findings
-CRITICAL: <🚨 list with file:line, or "none">
+SCORE: <points>/136 — <n> criteria met, <n> with findings
+CRITICAL: <list with file:line, or "none">
 FINDINGS (top 2):
 1. [file:line] <what was observed> — WHY: <one line> — FIX: <concrete proposal, as a diff when it's a text change>
 2. ...

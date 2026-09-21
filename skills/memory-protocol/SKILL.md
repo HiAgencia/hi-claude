@@ -34,8 +34,13 @@ Decide whether a piece of knowledge deserves persistence, where it goes, and wri
 
 - Link related memories with `[[name]]` wikilinks.
 - If a rule is contextual, declare it: `EXPLICIT SCOPE: only applies when ...`.
-- Date your evidence: "validated N=10, 2026-04-26" beats "this works".
+- **The rule travels WITHOUT its history.** No date, no figure from one run, no account of the incident
+  that produced it: those expire inside a text that does not. When the magnitude matters, the memory
+  points at the evidence document under `docs/` by path, and the number is read THERE.
 - Memories are short: the rule + why + how to apply. A 90-line memory is a document — move it to `docs/` and keep the path.
+- **What the user explains for the THIRD time gets proposed in that same turn**, for the CLAUDE.md it
+  belongs to — user level if it holds across their projects, the project's if it is about this one.
+  Making them repeat it is the failure, not the repetition.
 
 ## Communication
 

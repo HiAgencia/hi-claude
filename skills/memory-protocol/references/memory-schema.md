@@ -1,9 +1,5 @@
 # Memory schema — single source of truth
 
-> **hi-claude governs what persists here.** Only what passes the ADMISSION axis is admitted, and it is
-> written under the WRITING axis — both defined in the Constitution, which every session already
-> carries.
->
 > Auditors and skills validate against THIS file. If the native format evolves, update here only.
 
 ## Directory layout
@@ -31,7 +27,8 @@ metadata:
 
 <the fact, short and direct>
 
-**Why:** <what incident or statement originated this>
+**Why:** <the reason the rule holds — what it protects or what it costs to ignore. Never the dated
+incident or the figures of the case that produced it: those live in `docs/`, referenced by path>
 **How to apply:** <when and how to act on it>
 
 EXPLICIT SCOPE: <only if contextual — e.g. "only applies to N8N flows">
@@ -46,9 +43,6 @@ Notes:
 
 ```markdown
 # MEMORY.md — <project name>
-
-> hi-claude governs this memory: only what passes the ADMISSION axis is here, always with the user's
-> approval.
 
 - [Short title](type-slug.md) — one-line hook, max 150 chars
 ```

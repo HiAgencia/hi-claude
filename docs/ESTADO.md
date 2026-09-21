@@ -26,25 +26,30 @@ cargado progresivamente.
 
 | Hook | Qué garantiza |
 |---|---|
-| `UserPromptSubmit` | Detecta en el prompt las frases de estancamiento o de veredicto cerrado y trae el protocolo de dudas. Deliberadamente angosto: "este test falla, arreglalo" y "me falta una dependencia" no lo disparan |
-| `SessionStart` (`startup·resume·clear·compact·fork`) | Inyecta la Constitución; el bloque de trabajo abierto del registro, que busca en el directorio y un nivel adentro —con varios candidatos los nombra en vez de elegir, y si el bloque pasa el presupuesto DICE que el resto no llegó, con su tamaño—; los TÍTULOS de la documentación declarada, para que un protocolo referenciado por path no quede invisible; y el drift del inventario de plugins. Solo inyecta contenido REAL |
+| `UserPromptSubmit` | Cinco momentos que llegan por FRASE, cada uno en castellano y en inglés porque un regex no correlaciona entre idiomas: estancamiento o veredicto cerrado (protocolo de dudas) · una falla que VOLVIÓ (abrir los archivos antes de otra hipótesis) · «esto nunca me pasó» (comparar, no explicar) · el usuario REPITIENDO algo (barrer el patrón y proponer la regla) · una preferencia DURABLE (protocolo de memoria). Deliberadamente angosto: "este test falla, arreglalo" no dispara nada, y cada señal tiene en el banco su trampa hecha de las mismas palabras |
+| `SessionStart` (`startup·resume·clear·compact·fork`) | Inyecta la Constitución SÓLO si el `CLAUDE.md` global del usuario no lleva el bloque entre marcadores `hi-claude:principios` —una regla vive en un archivo, y el respaldo cubre a quien lo rechazó—; el bloque de trabajo abierto del registro, que busca en el directorio y un nivel adentro —con varios candidatos los nombra en vez de elegir, y si el bloque pasa el presupuesto DICE que el resto no llegó, con su tamaño—; los TÍTULOS de la documentación declarada, para que un protocolo referenciado por path no quede invisible; y el drift del inventario de plugins, contando sólo lo que CARGA acá: un plugin instalado para otro proyecto no es drift. Solo inyecta contenido REAL, y si no hay nada que decir no emite nada |
 | `SubagentStart` | Inyecta el rol dentro del subagente: investiga y nunca decide; puede leer, inspeccionar, testear y medir; su entregable son hipótesis y cierra con la cita del límite, textual |
-| `PreToolUse` (escrituras, Bash, delegación y `mcp__.*`) | Para un SUBAGENTE: `deny` a escribir fuera de un destino temporal por cualquier tool, a Bash fuera de una allowlist de lectura y runners de test, a toda tool MCP que no declare en su nombre que LEE, y a delegar el trabajo. Sin escape por variable de entorno. Para el PRINCIPAL: al despachar, el protocolo de delegación; y el aviso de background en trabajos largos. Para CUALQUIERA: `ask` si la escritura toca CLAUDE.md o la memoria. Por Bash eso se decide por el DESTINO de un operador de escritura, nunca por el texto del comando —`git` no edita contenido y una mención en un mensaje de commit no es una escritura—; la única excepción es un intérprete, que escribe desde adentro de su propio código y ahí la mención es todo lo que hay. La consulta es UNA por TURNO: en CLAUDE.md porque se exige el cambio en UNA escritura, y en memoria porque cubre el LOTE que la primera consulta listó. Si la memoria es NUEVA, nombra las que ya comparten una palabra con ella, porque fusionar es lo barato antes de escribir. También `ask` si un borrado toca algo que está DENTRO de un repo y git NO trackea, porque no hay copia y la vara "git lo conserva" no aplica ahí; fuera de todo repo esa vara nunca alcanzó y no se emite nada; y las reglas de redacción en toda escritura de markdown, con el MAPA DE DESTINOS solo cuando el archivo todavía no existe |
-| `PostToolUse` (escrituras) | Registra si el turno tocó el sistema y su tamaño; escribir el registro —reconocido donde VIVE, bajo `docs/` o en la raíz del repo, con `node_modules` afuera—, la foto viva, el inventario, el documento de contexto, el índice de documentación, CLAUDE.md o la memoria salda la deuda —el índice y el contexto están en la lista porque un documento sale del árbol por la terminal y MOVER algo a su lugar cierra el circuito igual que escribir, y sin eso podar o mudar dejaba la deuda intacta—. Al escribir en `plans/` o `specs/` avisa, sin bloquear, si algún vecino sigue con casillas sin marcar: un plan abierto por vez. Y al escribir el registro mide su MONOTONÍA: cuatro turnos que lo tocaron sin que baje una sola vez emiten la señal, nombrando la SECCIÓN donde aterrizó ese crecimiento. El contador es por REGISTRO y no por sesión, porque la monotonía es una propiedad del archivo ENTRE sesiones |
+| `PreToolUse` (escrituras, Bash, delegación y `mcp__.*`) | Para un SUBAGENTE: `deny` a escribir fuera de un destino temporal por cualquier tool, a Bash fuera de una allowlist de lectura y runners de test, a toda tool MCP que no declare en su nombre que LEE, y a delegar el trabajo. Sin escape por variable de entorno. Para el PRINCIPAL: al despachar, el protocolo de delegación; y el aviso de background en trabajos largos. Para CUALQUIERA: `ask` si la escritura toca CLAUDE.md o la memoria. Por Bash eso se decide por el DESTINO de un operador de escritura, nunca por el texto del comando —`git` no edita contenido y una mención en un mensaje de commit no es una escritura—; la única excepción es un intérprete, que escribe desde adentro de su propio código y ahí la mención es todo lo que hay. La consulta es UNA por TURNO: en CLAUDE.md porque se exige el cambio en UNA escritura, y en memoria porque cubre el LOTE que la primera consulta listó. Si la memoria es NUEVA, nombra las que ya comparten una palabra con ella, porque fusionar es lo barato antes de escribir. También `ask` si un borrado toca algo que está DENTRO de un repo y git NO trackea, porque no hay copia y la vara "git lo conserva" no aplica ahí; fuera de todo repo esa vara nunca alcanzó y no se emite nada; La consulta lleva delante las tres preguntas de ADMISIÓN, porque pedir sólo «confirmá el cambio» vuelve la aprobación un trámite sobre la forma. Las reglas de redacción llegan UNA vez por turno en la primera escritura de markdown —incluida «la regla va sin su historia»—, con el MAPA DE DESTINOS solo cuando el archivo todavía no existe, y el aviso de que un documento se edita con la tool de edición cuando la escritura llega por `sed -i`, un intérprete o una redirección |
+| `PostToolUse` (escrituras) | Registra qué archivos cambió la sesión, una línea por ARCHIVO; escribir el registro —reconocido donde VIVE, bajo `docs/` o en la raíz del repo, con `node_modules` afuera—, la foto viva, el inventario, el documento de contexto, el índice de documentación, CLAUDE.md o la memoria salda la deuda —el índice y el contexto están en la lista porque un documento sale del árbol por la terminal y MOVER algo a su lugar cierra el circuito igual que escribir, y sin eso podar o mudar dejaba la deuda intacta—. Al escribir en `plans/` o `specs/` avisa, sin bloquear, si algún vecino sigue con casillas sin marcar: un plan abierto por vez. Y al escribir el registro mide su MONOTONÍA: cuatro turnos que lo tocaron sin que baje una sola vez emiten la señal, nombrando la SECCIÓN donde aterrizó ese crecimiento. El contador es por REGISTRO y no por sesión, porque la monotonía es una propiedad del archivo ENTRE sesiones |
 | `PostToolUse` (`Agent·Task·Workflow`) | Al volver un reporte: es una hipótesis, se verifica de primera mano antes de que algo se apoye en ella |
-| `Stop` | Frena UNA vez el fin de un turno que cambió el sistema, con la demanda ESCALADA al tamaño del cambio: hasta dos archivos pide dos preguntas —qué dejó de ser falso y el registro—, y de ahí para arriba el circuito entero. Pregunta PRIMERO qué dejó de ser verdad por el cambio —y borrarlo cierra el circuito igual que escribir—, SEGUNDO qué no está en su lugar, y después qué falta, sobre los destinos: registro, foto viva, docs, inventario, memoria, CLAUDE.md. Exime lo que el propio turno produjo, salvo la pregunta de lugar: MOVER no es podar, así que no cae bajo la regla de la distancia. Respeta `stop_hook_active`, limpia su marca al frenar y las marcas de consulta del turno. Tras cerrar un bloque grande OFRECE el pre-mortem inverso, sin bloquear |
+| `Stop` | Frena UNA vez cuando la SESIÓN juntó tres archivos cambiados sin tocar el registro. Por debajo de ese umbral el turno pasa y la marca QUEDA: la deuda se difiere, no se perdona, y el bloqueo llega cuando vale la pena. Pregunta PRIMERO qué dejó de ser verdad por el cambio —y borrarlo cierra el circuito igual que escribir—, SEGUNDO qué no está en su lugar, TERCERO el registro, y sólo si cambió: foto viva, inventario, memoria, CLAUDE.md. Exime lo que el propio turno produjo, salvo la pregunta de lugar: MOVER no es podar, así que no cae bajo la regla de la distancia. Respeta `stop_hook_active`, limpia su marca al frenar y las marcas de consulta del turno. La evidencia del umbral vive en `docs/evals/` del taller |
 | `PreCompact` | Pide volcar lo que quedó a medio hacer antes de comprimir el contexto |
 
 **Ocho skills**: `memory-protocol` (+ Constitución y references), `roadmap`, `work-protocol`,
-`delegation`, `seeding-doubts`, `setup` (+ plantillas `es`/`en`), `audit`, `update`.
+`delegation`, `seeding-doubts`, `heavy-runs`, `setup` (+ plantillas `es`/`en`), `audit`.
 
-**`update` contesta lo que ninguna otra pieza contesta**: de lo que el plugin ofrece, qué NO está
-usando este proyecto. Es MANUAL —se corre después de actualizar— y no se solapa con `audit`, que
-pregunta si el proyecto está SANO: un registro puede estar perfectamente sano y desperdiciando una
-capacidad entera. Su panorama se REESCRIBE en cada release y nunca se apila, entra sólo lo que le
-pide algo AL PROYECTO, y cada ítem se verifica POR EFECTO sobre el proyecto —contar, abrir, correr—
-en vez de contra un changelog, así que lo ya adoptado se apaga solo y no hace falta saber de qué
-versión venía. Propone; no aplica. ⚠️ Un proyecto que salta varias versiones recibe el panorama
+**El reparto entre lo que viaja siempre y lo que llega por situación**: los siete principios van al
+`CLAUDE.md` global del usuario, en su idioma, como un bloque entre marcadores que `setup` y el target
+`adoption` de `audit` PROPONEN —un plugin no escribe ese archivo—. Las prácticas llegan por HOOK en su
+momento literal y la skill guarda el detalle: `work-protocol` lleva cómo se lee una falla, cómo se
+verifica, qué resuelve el agente solo, los nombres y el barrido de un error señalado; `heavy-runs`
+lleva el techo de máquina, el paralelismo derivado, el destino de escritura y el relanzamiento. El
+porqué: `hi-claude-internal/docs/superpowers/specs/principios-al-global-practicas-al-plugin-design.md`.
+
+**`audit adoption` contesta lo que ningún auditor contesta**: de lo que el plugin ofrece, qué NO está
+usando este proyecto. Se corre después de actualizar. Su panorama vive DENTRO de `audit`, se REESCRIBE
+en cada release y nunca se apila, entra sólo lo que le pide algo AL PROYECTO, y cada ítem se verifica
+POR EFECTO. Propone; no aplica. Cuidado: un proyecto que salta varias versiones recibe el panorama
 VIGENTE, no la unión de los deltas que se perdió: es la consecuencia elegida de reescribir.
 
 **Seis agentes auditores** read-only: CLAUDE.md, memoria, organización, ROADMAP, inventario y
@@ -53,10 +58,10 @@ textualmente. El de vigencia cubre `docs/` —el único directorio que no audita
 por EFECTO: una casilla sin marcar no prueba que el trabajo esté abierto, ni una marcada que esté
 cerrado. Ninguno borra: proponen.
 
-**El método en cada sesión** — la soberanía, los siete principios con sus cuatro ejes (admisión,
-pertenencia, redacción y vigencia), la jerarquía que resuelve conflictos entre ellos, y los cuatro
-invariantes: admisión y destino, consulta, rastro, vigencia. Es lo único que viaja siempre; el resto se
-abre por skill. VIGENCIA manda sobre PERTENENCIA a propósito: a algo que ya dejó de servir no se le
+**El método en cada sesión** — los siete principios con su jerarquía, la regla de que la regla viaja
+SIN su historia (la evidencia y su N viven en `docs/`), admisión, consulta, distancia y rastro. Viajan
+por el `CLAUDE.md` global cuando el bloque está, y por la Constitución inyectada cuando no. El resto
+llega por hook en su momento. VIGENCIA manda sobre PERTENENCIA a propósito: a algo que ya dejó de servir no se le
 busca casa.
 
 **El tamaño no es la vara.** Ninguna rúbrica cobra puntos por cantidad de líneas: se reporta como dato
@@ -112,7 +117,7 @@ archivos es un costo sin contraparte, y el auditor propone la fusión cuando enc
   `git`. Bastaba un `>` en cualquier parte para declarar que el comando escribía, y un `2>/dev/null`
   o el `<noreply@anthropic.com>` de un trailer de commit lo aportan solos. Sondeado por efecto,
   `git log -- CLAUDE.md > hist.txt` y `git diff CLAUDE.md | tee d.txt` pedían permiso siendo LECTURA.
-  ⚠️ Y el arreglo que destapó esto es el mismo que cerró tres evasiones: mientras `json_str` cortaba
+  Cuidado: el arreglo que destapó esto es el mismo que cerró tres evasiones: mientras `json_str` cortaba
   el comando en la primera comilla escapada, el guardián no veía un `git commit` entrecomillado — no
   estaba bien, estaba ciego.
 - **En el lote de memorias, el HOOK garantiza la CONSULTA y el MODELO sostiene el CONTENIDO.** Lo que

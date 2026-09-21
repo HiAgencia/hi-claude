@@ -2,16 +2,17 @@
 # PreToolUse policy for hi-claude.
 #
 #   1. A SUBAGENT never decides what gets done and never touches the project's artefacts. It may
-#      read, inspect, test and measure — that is its job. Anything it writes outside a clearly
+#      read, inspect, test and measure - that is its job. Anything it writes outside a clearly
 #      temporary location is denied, through ANY tool, and so is delegating the work onward.
 #      There is no environment-variable escape: a switch nobody can see in the session is a hole
 #      with a name. The visible escape is disabling the plugin.
 #   2. Anyone writing a governed file (CLAUDE.md / persistent memory) -> ask.
 #   3. Anyone writing markdown -> the writing rules, in one line, with the skill that holds them.
-#      Measured: as a skill description alone this never fired, because writing prose has no
-#      decision point where a skill feels required. It is a guarantee or it is nothing.
+#      Writing prose has no decision point where a skill feels required, so as a skill description
+#      alone the rules do not arrive. It is a guarantee or it is nothing.
 #
-# Everything else passes through untouched (empty output, exit 0).
+# Everything else passes through untouched (empty output, exit 0). The evidence behind each rule
+# lives in the maintainers' eval reports; the comments here carry the invariant.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -44,10 +45,8 @@ all_paths=$(printf '%s' "$input" \
 # A destination a subagent may write: clearly temporary, never a project artefact.
 #
 # THE NULL SINK IS NOT A DESTINATION. Discarding output is the opposite of writing, and leaving it out
-# denied every read a subagent could make: measured, `ls`, `cat`, `grep`, `git status` and `find` were
-# all denied the moment they carried `2>/dev/null`, while the same commands without it passed. Under a
-# working method that sends command output to a file or to the void, that is most of what a subagent
-# runs - the containment stayed intact and the investigation it exists to allow did not.
+# denies every read that carries `2>/dev/null` - which, under a method that sends command output to a
+# file or to the void, is most of what a subagent runs.
 is_temp() {
   case "$(norm "$1")" in
     /dev/null|/dev/stdout|/dev/stderr|nul|nul:) return 0 ;;
@@ -57,15 +56,12 @@ is_temp() {
 }
 
 # A COMMAND IS NOT ONE COMMAND. `cd X && rm y ; R="Z"` is three, and a decision taken over the whole
-# string attributes one segment's operator to another segment's arguments. Measured in real use: a
-# `rm` of a lock file in the temp dir raised the untracked-delete notice naming the PROJECT ROOT,
-# which appeared in a variable assignment three statements later.
+# string attributes one segment's operator to another segment's arguments.
 #
 # The payload carries JSON-ESCAPED quotes, so quoted arguments read as `\"a b\"`. Un-escape first or
 # every quoted path is parsed with its backslash and matches nothing that exists.
-# A separator INSIDE quotes is text, not a separator. Splitting on it fabricates a segment that was
-# never a command: measured, `echo "cuidado con | rm CLAUDE.md adentro"` produced a phantom `rm`
-# segment and asked for confirmation to delete a file nothing was deleting.
+# A separator INSIDE quotes is text, not a separator: splitting on it fabricates a segment that was
+# never a command.
 segments_of() {
   printf '%s' "$1" | sed 's/\\"/"/g' | awk -v SQ="'" '
     {
@@ -83,8 +79,8 @@ segments_of() {
     }'
 }
 
-# Split respecting quotes: paths carry spaces (this plugin is developed under one), and splitting on
-# whitespace alone turns one path into two tokens that match nothing.
+# Split respecting quotes: paths carry spaces, and splitting on whitespace alone turns one path into
+# two tokens that match nothing.
 tokens_of() {
   printf '%s' "$1" \
     | grep -oE '"[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+' \
@@ -103,8 +99,8 @@ args_of() {
 if [ -n "$agent_id" ]; then
 
   # 1a. Session-local scratch is not a project artefact. Matching is an UNANCHORED regex, so the
-  #     matcher above also catches TodoWrite, and the mutation-verb check below would deny it for
-  #     containing "write". Denying a subagent its own todo list is friction, not protection.
+  #     matcher above also catches TodoWrite, and the allowlist below would deny it. Denying a
+  #     subagent its own todo list is friction, not protection.
   case "$tool" in
     TodoWrite|TaskGet|TaskList|TaskOutput) exit 0 ;;
   esac
@@ -156,9 +152,8 @@ $extra
 EOF
       [ -n "$matched" ] && continue
       # A READ COMMAND WITH A WRITE FLAG IS A WRITE COMMAND. The allowlist admits linters and test
-      # runners by their SUBCOMMAND, and several of them rewrite the source when asked: measured,
-      # `cargo clippy --fix`, `npm run lint -- --fix` and `gradle check --write-locks` all passed
-      # the subagent containment while editing the project. The subcommand is not the whole contract.
+      # runners by their SUBCOMMAND, and several of them rewrite the source when asked (`--fix`,
+      # `--write-locks`). The subcommand is not the whole contract.
       case " $seg " in
         *" --fix"*|*" --write"*|*" -w "*|*" --apply"*|*" --in-place"*|*" --save"*|*" --force"*|\
         *" --write-locks"*|*" --update-snapshot"*|*" -u "*|*" --overwrite"*)
@@ -192,10 +187,10 @@ EOF
     exit 0
   fi
 
-  # 1e. MCP and anything else: an ALLOWLIST of reading, not a blocklist of mutation. Measured, a
-  #     blocklist is always one verb behind: `mcp__ide__executeCode` runs arbitrary code — it writes
-  #     whatever it wants — and matched no mutation verb. Same lesson as the Bash policy. A tool whose
-  #     name does not state that it READS is denied, which is the safe side of an unknown.
+  # 1e. MCP and anything else: an ALLOWLIST of reading, not a blocklist of mutation. A blocklist is
+  #     always one verb behind - a tool that runs arbitrary code matches no mutation verb. Same lesson
+  #     as the Bash policy: a tool whose name does not state that it READS is denied, which is the
+  #     safe side of an unknown.
   case "$(printf '%s' "$tool" | tr '[:upper:]' '[:lower:]')" in
     *get*|*list*|*read*|*search*|*query*|*fetch*|*find*|*resolve*|*describe*|*show*|*view*|*inspect*|*diagnos*|*status*|*docs*|*lookup*|*explain*|*count*|*check*)
       exit 0 ;;
@@ -205,10 +200,8 @@ EOF
 fi
 
 # -------------------------------------------------- 2. the main agent DISPATCHING
-# The delegation protocol has to arrive HERE, at the dispatch. Measured on the triggering harness:
-# as a skill description alone it fired 0/4 on explicit dispatch phrasings, because dispatching has
-# no decision point where a skill feels required - the model simply dispatches. Same lesson as the
-# writing rules: it is a guarantee or it is nothing.
+# The delegation protocol has to arrive HERE, at the dispatch: dispatching has no decision point where
+# a skill feels required - the model simply dispatches. It is a guarantee or it is nothing.
 case "$tool" in
   Agent|Task|Workflow)
     emit_context PreToolUse "hi-claude: delegate the LOOKING, never the DECIDING - and never the change itself, not even an additive one. Ask for evidence you can check (file:line, the command that reproduces). What comes back is a HYPOTHESIS: read it whole, verify it first-hand before anything rests on it, and own the decision in your own words. Full protocol: the hi-claude:delegation skill."
@@ -224,7 +217,7 @@ if [ "$tool" = "Bash" ]; then
     *run_in_background*) ;;
     *)
       printf '%s' "$command" | grep -Eq '(^|[;&|[:space:]])(pytest|jest|vitest|mocha|rspec|phpunit|tox|nox|gradle|mvn|terraform)([[:space:]]|$)|docker[[:space:]]+(build|compose)|npx[[:space:]]+playwright|run-evals|(npm|yarn|pnpm)[[:space:]]+(test|install|ci|run[[:space:]]+(test|build|e2e|lint))|(cargo|go|dotnet)[[:space:]]+(test|build)|(^|[[:space:]])make([[:space:]]|$)' \
-        && { emit_context PreToolUse "hi-claude: this reads as a job that runs for minutes. Prefer run_in_background so the session keeps working while it runs and picks the result up from the notification - a blocked wait costs the whole turn. Foreground only when the very next step needs its output."; exit 0; }
+        && { emit_context PreToolUse "hi-claude: this reads as a job that runs for minutes. Prefer run_in_background, with its FULL output going to a file - never piped through tail or head, which replaces its exit code and cuts the field that answers the question - and keep working on whatever that run does not read: \"it is running\" is not a waiting state. If it loads the machine or is about to be re-launched, the hi-claude:heavy-runs skill holds the rules. Foreground only when the very next step needs its output."; exit 0; }
       ;;
   esac
 fi
@@ -236,21 +229,18 @@ fi
 # user's. Files that ARE tracked pass untouched - that is the common case and it stays frictionless.
 #
 # THE WHOLE THING IS SCOPED TO A REPO, because the doctrine it patches governs the PROJECT's material
-# and nothing else. See the loop below: `ls-files` cannot tell "inside a repo and ignored" from "no
-# repo here", and only the first one is what this was built for.
+# and nothing else: `ls-files` cannot tell "inside a repo and ignored" from "no repo here", and only
+# the first one is what this was built for.
 #
 # QUOTED SEGMENTS FIRST, then the rest. Splitting the whole command on whitespace breaks any path
-# carrying spaces - which on Windows is the common case, not the edge one - and the damage is not that
-# it stays silent: a fragment of the broken path can still match something that exists, so the ask
-# fires naming the WRONG token. Measured on this very repo, whose path carries spaces: the notice
-# named `\` instead of the file, asking the user to inspect something it could not name.
+# carrying spaces, and the damage is not silence: a fragment of the broken path can still match
+# something that exists, so the ask fires naming the WRONG token.
 if [ "$tool" = "Bash" ]; then
   case "$command" in
     *rm\ *|*"Remove-Item"*|*unlink\ *)
       unsaved=""
-      # ONLY the arguments of a DELETING segment. Scanning the whole command attributes the `rm` to
-      # tokens that belong to other statements: measured in real use, deleting a lock file under the
-      # temp dir raised this notice naming the PROJECT ROOT, which sat in a later variable assignment.
+      # ONLY the arguments of a DELETING segment: scanning the whole command attributes the `rm` to
+      # tokens that belong to other statements.
       cands=""
       while IFS= read -r seg; do
         [ -n "$seg" ] || continue
@@ -266,24 +256,21 @@ SEGMENTS
       while IFS= read -r cand; do
         [ -n "$cand" ] || continue
         # A token made only of separators is not a path: on Windows `\` IS the drive root and passes
-        # `-e`, which is what turned a broken parse into a confident wrong answer.
+        # `-e`, which turns a broken parse into a confident wrong answer.
         case "$(printf '%s' "$cand" | tr -d '\\/. ')" in "") continue ;; esac
         [ -e "$cand" ] || continue
         is_temp "$cand" && continue
         # THE PREMISE ONLY HOLDS INSIDE A REPO. A path under no repo at all was never covered by "git
-        # keeps it", so quoting that rule at it says nothing - and `ls-files` cannot tell the two
-        # apart: it comes back empty both for an ignored file inside a repo, which is the case this
-        # exists for, and for a path git was never going to see. Measured in real use: deleting a
-        # scratch directory on another drive asked, naming a rule that never reached it, on work whose
-        # own convention is that it gets deleted once the run completes. An environment with no git at
-        # all lands in this same branch, which is the right place for it: nothing can be checked there,
-        # and asking on every delete is noise, not protection.
+        # keeps it", so quoting that rule at it says nothing - and `ls-files` comes back empty both for
+        # an ignored file inside a repo and for a path git was never going to see. An environment with
+        # no git at all lands in this same branch, which is the right place for it: nothing can be
+        # checked there, and asking on every delete is noise, not protection.
         holder="$cand"
         [ -d "$cand" ] || holder=$(dirname "$cand")
         git -C "$holder" rev-parse --git-dir >/dev/null 2>&1 || continue
         # A DIRECTORY is never a pathspec `ls-files --error-unmatch` can match, so asking that way
-        # reports every tracked directory as untracked. Measured: it named a repo root that git has
-        # carried for its whole history. A directory counts as saved when git tracks anything inside.
+        # reports every tracked directory as untracked. A directory counts as saved when git tracks
+        # anything inside.
         if [ -d "$cand" ]; then
           [ -n "$(git -C "$cand" ls-files 2>/dev/null | head -n 1)" ] && continue
         else
@@ -303,11 +290,8 @@ fi
 # ------------------------------------------------- 4. governed files (anyone)
 # WHAT COUNTS AS WRITING A GOVERNED FILE. For Write/Edit/NotebookEdit the destination is explicit and
 # the test is exact. For Bash there is no file_path, and testing the command TEXT confuses MENTIONING
-# a file with WRITING it. Measured over real transcripts: 285 commands reached this branch and 8 of
-# them wrote the file - 277 false positives (97,2%), 254 of them headed by `cd` and 14 by `git`. Two
-# loose matches were ANDed - any `>` anywhere meant "this writes" - and a `2>/dev/null` or the
-# `<noreply@anthropic.com>` of a commit trailer supplies the `>`. `git log -- CLAUDE.md > hist.txt`
-# and `git diff CLAUDE.md | tee d.txt` both asked, and both are READS.
+# a file with WRITING it: a `2>/dev/null` or the `<noreply@…>` of a commit trailer supplies a `>`, and
+# `git log -- CLAUDE.md > hist.txt` is a READ.
 #
 # So Bash is decided by the DESTINATION of a write operator. `git` cannot edit file content, and a
 # mention inside a commit message is not a write. The one case a destination cannot express - an
@@ -342,14 +326,12 @@ bash_write_targets() {
     case "$head" in
       # The destination is an ARGUMENT, not a redirection. Testing every token is deliberate: the
       # flag order is the caller's and a positional destination has no marker to anchor on.
-      # `sed` writes ONLY with -i. Measured over 691 real commands, listing it unconditionally made
-      # `sed -n '83p' CLAUDE.md` - a READ - ask for confirmation, which is the same mention-vs-write
-      # confusion one level down.
+      # `sed` writes ONLY with -i: listing it unconditionally turns `sed -n '83p' CLAUDE.md` - a
+      # READ - into a confirmation, which is the same mention-vs-write confusion one level down.
       sed)
         case " $seg " in *" -i"*) tokens_of "$seg" ;; esac ;;
-      # `patch` and `xargs` earn their place by measurement, not by symmetry: both write a governed
-      # file with no redirection in sight - `patch CLAUDE.md < d.diff` and `xargs -I{} cp {} CLAUDE.md`
-      # both passed before they were listed here.
+      # `patch` and `xargs` write a governed file with no redirection in sight:
+      # `patch CLAUDE.md < d.diff`, `xargs -I{} cp {} CLAUDE.md`.
       tee|cp|mv|rm|unlink|truncate|dd|install|ln|patch|xargs|\
       Set-Content|Add-Content|Out-File|Remove-Item|Move-Item|Copy-Item|New-Item)
         tokens_of "$seg" ;;
@@ -396,12 +378,8 @@ if [ -n "$governed" ]; then
 
   # ONE CONSULTATION PER TURN, and the two governed files earn it differently.
   #
-  # Measured over real transcripts: 311 turns produced 908 consultations and only 121 (38,9%) needed
-  # one. 597 of them (65,7%) were the second or later of the same turn - the worst turn asked 35, and
-  # one turn made 19 separate edits to CLAUDE.md alone.
-  #
-  # CLAUDE.md loses nothing: nineteen fragments are LESS reviewable than the whole file, so the demand
-  # is the change in ONE write and the guarantee stays whole. Memories cannot be merged that way - nine
+  # CLAUDE.md loses nothing: many fragments are LESS reviewable than the whole file, so the demand is
+  # the change in ONE write and the guarantee stays whole. Memories cannot be merged that way - nine
   # memories are nine files - so there the consultation covers the BATCH: the first one demands the
   # whole list up front and the rest of the turn rides it. That is the consultation axis loosened on
   # purpose, with the user's word, and only for memories.
@@ -416,10 +394,9 @@ if [ -n "$governed" ]; then
     fi
   fi
 
-  # A memory that does not exist yet is the moment MERGING is still cheap. Measured on a project under
-  # this method: 63 memories, 48 of them `feedback`, with seven stating one rule against seven
-  # different objects. The neighbours are named by shared word - crude on purpose, because the cost of
-  # naming one too many is a line, and the cost of naming none is memory number 64.
+  # A memory that does not exist yet is the moment MERGING is still cheap: memories pile up as one
+  # rule stated against many objects. The neighbours are named by shared word - crude on purpose,
+  # because the cost of naming one too many is a line, and the cost of naming none is one more memory.
   extra=""
   real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
   case "$(norm "$real")" in
@@ -442,10 +419,14 @@ if [ -n "$governed" ]; then
         [ -n "$near" ] && extra=" This memory does not exist yet. MERGING beats adding and creating a new one is the LAST option - these already share a word with it: ${near}. Open them first: if one already carries the rule, extend THAT one instead."
       fi ;;
   esac
+  # THE CONSULTATION CARRIES THE ADMISSION QUESTIONS. Asking only to "confirm the change" turns approval
+  # into a formality over the FORM, and what then gets approved is whatever was proposed. The three
+  # questions are what the user is actually ruling on, so they sit in the dialog itself.
+  admission="ADMISSION, before confirming: (1) did the USER state this as a preference or a limit? (2) will it still be true in five months - no date, no figure from one run, no account of the case that produced it? (3) is it the RULE, with its evidence left in docs/ and only its path here? A no on any of them means it does not go in."
   if [ -n "$is_memory" ]; then
-    emit_decision ask "hi-claude guard: this writes to persistent memory. Review and confirm the exact change. THIS CONSULTATION COVERS THE WHOLE TURN: if you intend to write more memories now, LIST THEM ALL HERE - name and content of each - because the rest of the turn will ride this approval and what was not listed was not approved.${extra}"
+    emit_decision ask "hi-claude guard: this writes to persistent memory. ${admission} THIS CONSULTATION COVERS THE WHOLE TURN: if you intend to write more memories now, LIST THEM ALL HERE - name and content of each - because the rest of the turn will ride this approval and what was not listed was not approved.${extra}"
   else
-    emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md). Review and confirm the exact change. APPLY THE WHOLE CHANGE IN ONE WRITE: every separate edit costs the user another confirmation, and nineteen fragments are less reviewable than the file. If more changes to this file remain, compose them and write once.${extra}"
+    emit_decision ask "hi-claude guard: this writes to a governed file (CLAUDE.md). ${admission} APPLY THE WHOLE CHANGE IN ONE WRITE: every separate edit costs the user another confirmation, and a whole file is more reviewable than its fragments. If more changes to this file remain, compose them and write once.${extra}"
   fi
   exit 0
 fi
@@ -457,8 +438,6 @@ fi
 # document already declared emits nothing: a signal that shows up on ordinary work is one that gets
 # learnt away, and creating a file is the only moment where the destination is still free. The map is
 # what EXISTS under docs/, not what an index declares - a session can only reuse what is really there.
-# The destinations are real paths now, not a command string, so the suffix test is exact - and a
-# markdown file written THROUGH Bash reaches the rules for the first time.
 md=""
 while IFS= read -r candidate; do
   [ -n "$candidate" ] || continue
@@ -471,10 +450,7 @@ case "$md" in
   yes)
     map=""
     real=$(printf '%s' "$file_path" | tr '\\' '/' | sed 's#//*#/#g')
-    # A TEMPORARY destination is not a project document, so it gets no destination map. Measured in a
-    # real session: creating a scratch `.md` under the session scratchpad brought the whole map, which
-    # is the exact shape of noise this signal was built to avoid - one that shows up on ordinary work
-    # is one that gets learnt away.
+    # A TEMPORARY destination is not a project document, so it gets no destination map.
     if [ -n "$real" ] && [ ! -e "$real" ] && ! is_temp "$real"; then
       docs="$(printf '%s' "$cwd" | sed 's#\\\\#\\#g' | tr '\\' '/' | sed 's#//*#/#g')/docs"
       if [ -d "$docs" ]; then
@@ -490,7 +466,31 @@ case "$md" in
         [ -n "$dests" ] && map=" CREATING a document is the LAST option - what comes up goes into an existing one, and any pair that can be merged is merged. Destinations already here: ${dests}. What is not opened session after session is CONTEXT and lives together in ONE place. If none of these owns it, say why in one line and declare the new file in CLAUDE.md in this same turn: a document the orchestrator does not name is one no session opens."
       fi
     fi
-    emit_context PreToolUse "hi-claude: written work here is TIMELESS and NON-CONDITIONING - no dates, no \"for now\", no verdict that closes a door (ceiling, impossible, definitive), and no doc that turns into a chronicle. OBJECTIVE: the fact with its evidence, never a grade or an attributed cause. A measured result is a datum with its N, reopenable. Full rules: the hi-claude:work-protocol skill.${map}"
+    # A DOCUMENT IS EDITED WITH THE EDIT TOOL. A script - `sed -i`, an interpreter, a redirection -
+    # hits the line and misses the meaning, and nobody can review the change until it is done. Moving,
+    # copying and deleting are not editing, so those heads stay out.
+    script=""
+    if [ "$tool" = "Bash" ]; then
+      case " $(printf '%s' "$command" | sed 's/\\"/"/g') " in
+        *" sed "*|*" awk "*|*" perl "*|*"python"*|*" node "*|*">"*".md"*)
+          script=" A DOCUMENT IS EDITED WITH THE EDIT TOOL, NEVER WITH A SCRIPT: a splice by line number or a regex pass cannot be reviewed before it lands. If the change feels too big for the edit tool, it is several changes." ;;
+      esac
+    fi
+    # ONCE PER TURN. A turn that edits twenty documents needs the rules once: repeated on every write
+    # they are the signal that shows up on ordinary work and gets learnt away. The map and the script
+    # rule are about THIS write, so they still ride along on their own. Without a turn key it repeats,
+    # which is the safe side.
+    rules="hi-claude: written work here is TIMELESS and NON-CONDITIONING - no dates, no \"for now\", no verdict that closes a door (ceiling, impossible, definitive), and no doc that turns into a chronicle. OBJECTIVE: the fact with its evidence, never a grade or an attributed cause. THE RULE TRAVELS WITHOUT ITS HISTORY: a figure, its N and the case behind a rule live in the evidence document, not glued to the rule. Full rules: the hi-claude:work-protocol skill."
+    if [ -n "$prompt_id" ] && [ -n "$session" ]; then
+      seen="${TMPDIR:-/tmp}/hi-claude-md-${session}-${prompt_id}"
+      if [ -f "$seen" ]; then
+        rules=""
+        [ -n "${map}${script}" ] && rules="hi-claude:"
+      else
+        : > "$seen" 2>/dev/null
+      fi
+    fi
+    [ -n "$rules" ] && emit_context PreToolUse "${rules}${map}${script}"
     ;;
 esac
 

@@ -1,8 +1,7 @@
 <!-- Generado por hi-claude. UN inventario, cuatro secciones: skills, MCP, plugins y herramientas. -->
 # Inventario — {{PROJECT_NAME}}
 
-> **hi-claude gobierna este inventario.** Qué puede usar una sesión acá. Se construye una vez y se
-> actualiza cuando algo cambia.
+> Qué puede usar una sesión acá. Se construye una vez y se actualiza cuando algo cambia.
 >
 > Detalle PROPORCIONAL: lo que este proyecto usa por funcionamiento o prioridad va descrito con lo que
 > se midió y su límite observado; el resto queda solo NOMBRADO, para que ninguna sesión lo ignore por

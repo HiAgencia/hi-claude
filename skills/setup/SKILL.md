@@ -18,6 +18,17 @@ Onboard a project into the hi-claude method in ~5 minutes, interviewing the user
 3. Detect the user's language from the conversation; generate everything in that language (templates
    exist in `es` and `en`).
 
+## Phase 1b — The principles block, ONCE per user
+
+What weighs on EVERY session belongs in the file the runtime loads whole: the user's global
+`~/.claude/CLAUDE.md`. Check it for the `<!-- hi-claude:principios -->` marker. If it is missing,
+propose the block from `${CLAUDE_PLUGIN_ROOT}/skills/setup/templates/<lang>/PRINCIPLES.template.md`
+— in the USER's language, as the exact change, appended to what they already have — and wait for their
+approval (the Guardian asks too). The markers are identical in every language and must not be renamed:
+the session start looks for them, and while they are absent it keeps injecting the Constitution, so a
+user who declines loses nothing. The block is the method's ONLY footprint outside the project; nothing
+else of the method gets restated in any CLAUDE.md.
+
 ## Phase 2 — Interview
 
 One `AskUserQuestion` call. The tool takes 2-4 closed options per question and adds "Other" for free
@@ -44,9 +55,6 @@ Present the exact plan: the file tree to create and the full CLAUDE.md content, 
 filled:
 
 - `{{PROJECT_NAME}}`, `{{PROJECT_DESCRIPTION}}`
-- `{{MEMORY_PATH}}` — the REAL memory directory: list `~/.claude/projects/` and match the slug derived
-  from the project path (separators and specials replaced by dashes). If no match exists yet, use the
-  derived form anyway — the directory appears with the first saved memory.
 - `{{KEY_DOCS}}` — TIMELESS key documents only (research, trackers, manuals), one line each:
   `- **Descriptive title**: \`path\``. In a fresh project write the "nothing yet" placeholder. Plans
   and status docs never go here; when unsure, consult
@@ -117,14 +125,16 @@ decision tree).
 If a CLAUDE.md already exists: do NOT overwrite. Audit it instead (`/hi-claude:audit claude-md`) and
 offer the missing pieces one by one, as explicit diffs:
 
-- the sovereignty declaration in the first block, and the seven principles in the method section
+- the principles block in the user's GLOBAL CLAUDE.md (Phase 1b) — and, once it is there, REMOVING
+  from the project file whatever restates the method: a sovereignty banner, the method's bullets, a
+  memory section, a proactivity list. One write, shown as the exact change
 - the `Gotchas` section — what the file tree does NOT say
 - the `docs/ROADMAP.md` + `docs/ESTADO.md` pair, and the "Start here" reference to them
 - the inventory document (Phase 5) — offer it even when everything else is in place. If the project
   already carries `SKILLS.md` / `MCP.md` / `PLUGINS.md` / `TOOLS.md` as separate files, offer to MERGE
   them into one, in this order: rescue → verify the content IS in the destination → only then delete.
-  Never the other way round: measured, of 4 overlaps an audit called probable, 2 were false
-- the memory section, the tools table, and the docs index reference
+  Never the other way round: a reported overlap is a hypothesis
+- the tools table, and the docs index reference
 
 ## Tone
 
