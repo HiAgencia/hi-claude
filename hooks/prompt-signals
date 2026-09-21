@@ -45,6 +45,15 @@ then
   msg="${msg}hi-claude: this failure CAME BACK. Before another hypothesis: OPEN the files that take part, whole, and compare them with each other - the piece that writes, the one that merges, the one that consumes, and their tests. Theorising is allowed only IN ADDITION to reading; comparing two outputs and deducing the cause is the effect standing in for the cause. A fix made on the piece where the symptom showed is the next pass, not a fix. "
 fi
 
+# --- a run that loads the machine, or a re-launch ---
+# Asking for a run has no decision point where a skill feels required, so as a description alone
+# `heavy-runs` does not arrive. "en paralelo" on its own is ordinary work and stays silent: what is
+# matched is sizing the parallelism, launching a campaign, or launching again.
+if has 'cu[aá]nt[oa]s (workers|procesos|hilos)|relanz[aáoó]|volv[eé] a (lanzar|correr)l[ao]|lanz[aá] (la|una|toda la) (cosecha|bater[ií]a|corrida|campa[ñn]a)|corrida (pesada|completa|larga)|se cay[oó] (la sesi[oó]n|la m[aá]quina)|how many (workers|processes|threads)|re-?launch|run (it|the (full )?(batch|harvest|crawl)) again|the (session|machine) crashed'
+then
+  msg="${msg}hi-claude: this reads as a run that loads the machine or a RE-LAUNCH, and it has a protocol: hi-claude:heavy-runs. Before launching: the load ceiling is of the WHOLE machine, so look at what else is running over a WINDOW; derive the parallelism from a measured unit cost, never from trying numbers; read WHAT the run writes and WHERE before it runs, a smoke run included; and before launching AGAIN, read the whole chain - the defect lives in the neighbouring piece that was not opened, and a cache added to make re-running cheaper documents the plan to fail again. "
+fi
+
 # --- "this never happened to me" ---
 if has 'nunca me (hab[ií]a )?pas[oó]|esto nunca (me )?pas|jam[aá]s me pas[oó]|en (mis )?otros proyectos (no|nunca)|never happened (to me )?before|never seen this before|(it )?never did this before|in my other projects'
 then

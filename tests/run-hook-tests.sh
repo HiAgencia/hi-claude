@@ -965,6 +965,11 @@ sig_case "never USED something is not that"        'COMPARE'   silent 'Nunca use
 sig_case "the user repeating themselves (es)"      'REPEATING' fires  'Ya te lo dije: las tablas van sin bordes'
 sig_case "the user repeating themselves (en)"      'REPEATING' fires  'I already told you, no borders on tables'
 sig_case "counting times is not repeating"         'REPEATING' silent 'Cuantas veces corre este cron por dia?'
+sig_case "sizing a heavy run (es)"                 'heavy-runs' fires  'Lanza la cosecha completa en paralelo, cuantos workers le pongo?'
+sig_case "a re-launch (es)"                        'heavy-runs' fires  'La corrida pesada se cayo junto con la sesion, relanzala'
+sig_case "sizing a heavy run (en)"                 'heavy-runs' fires  'Run the full batch again over the whole dataset, how many workers should I use?'
+sig_case "tests in parallel is ordinary work"      'heavy-runs' silent 'Corre los tests en paralelo para que tarde menos'
+sig_case "explaining a worker is not a run"        'heavy-runs' silent 'Explicame que hace un worker en este codigo'
 # Two signals in one prompt both arrive: they are separate moments, not alternatives.
 out=$(psig 'Ya te lo dije y sigue fallando igual')
 printf '%s' "$out" | grep -qF 'CAME BACK' && printf '%s' "$out" | grep -qF 'REPEATING' \
