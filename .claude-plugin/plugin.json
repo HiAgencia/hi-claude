@@ -1,6 +1,6 @@
 {
   "name": "hi-claude",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "license": "MIT",
   "description": "A working method for Claude Code: seven principles on four axes with the hierarchy that settles them, governed memory, a curated CLAUDE.md, a register of open work that survives compaction, every content with a declared destination instead of a new file, text that gets pruned when it stops being true, subagents that investigate and never decide, an inventory of what the project can use, and a turn that does not end with the register stale.",
   "author": {

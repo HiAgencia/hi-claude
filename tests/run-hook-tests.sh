@@ -1119,6 +1119,37 @@ if git -C "$dproj" init -q >/dev/null 2>&1; then
     && ok "belonging: an untracked DIRECTORY inside the repo still asks" \
     || ko "belonging: an untracked DIRECTORY inside the repo still asks" "$out"
   rm -rf "$dproj/scrap dir" 2>/dev/null
+  # A GENERATED ARTEFACT IS THE COPY. Untracked and inside the repo, same as the case above - and yet
+  # deleting it loses nothing, because the source that builds it is alive in the tree. Measured in real
+  # use: `rm -rf .next` before a rebuild raised the notice on every single build.
+  mkdir -p "$dproj/.next/cache" && printf 'x\n' > "$dproj/.next/cache/a.js"
+  out=$(delcmd "$dproj/.next")
+  printf '%s' "$out" | grep -qF "NO copy" \
+    && ko "belonging: a build directory is not treated as an original" "$out" \
+    || ok "belonging: a build directory is not treated as an original"
+  # By NAME on ANY component: the artefact does not stop being one because a sub-path is named.
+  out=$(delcmd "$dproj/.next/cache")
+  printf '%s' "$out" | grep -qF "NO copy" \
+    && ko "belonging: a path INSIDE a build directory is not an original either" "$out" \
+    || ok "belonging: a path INSIDE a build directory is not an original either"
+  rm -rf "$dproj/.next" 2>/dev/null
+  # AND THE NAME IS NOT A SUBSTRING. `.nextdoc` shares its opening with `.next` and is nobody's build
+  # output: matching loosely here turns the exemption into a hole with no name.
+  mkdir -p "$dproj/.nextdoc" && printf 'x\n' > "$dproj/.nextdoc/a.txt"
+  out=$(delcmd "$dproj/.nextdoc")
+  printf '%s' "$out" | grep -qF "NO copy" \
+    && ok "belonging: a name that merely STARTS like a build directory still asks" \
+    || ko "belonging: a name that merely STARTS like a build directory still asks" "$out"
+  rm -rf "$dproj/.nextdoc" 2>/dev/null
+  # A PROJECT ADDS ITS OWN NAMES. The built-in list trails whatever tool the project adopted next, and
+  # a list that can only grow by shipping a release is a list that stays wrong until then.
+  mkdir -p "$dproj/.claude" && printf '# mine\nmiartefacto\n' > "$dproj/.claude/hi-claude-disposable"
+  mkdir -p "$dproj/miartefacto" && printf 'x\n' > "$dproj/miartefacto/a.txt"
+  out=$(delcmd "$dproj/miartefacto")
+  printf '%s' "$out" | grep -qF "NO copy" \
+    && ko "belonging: a name declared in .claude/hi-claude-disposable is exempt" "$out" \
+    || ok "belonging: a name declared in .claude/hi-claude-disposable is exempt"
+  rm -rf "$dproj/miartefacto" "$dproj/.claude" 2>/dev/null
   # AND THE SCOPE. Outside every repo the premise never applied, and `ls-files` comes back empty
   # there exactly as it does for an ignored file inside one - so without the repo test this notice
   # fires on material git was never going to see. Measured in real use on a scratch directory on

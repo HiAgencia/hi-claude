@@ -58,7 +58,7 @@ nothing applies, say so in one line and stop.
 > **Rewritten at every release, never stacked.** An item leaves when it stops being adoptable. Only
 > what asks something OF THE PROJECT enters: a change that just works asks nothing and does not belong.
 
-**Version that carries this panorama: 5.0.0**
+**Version that carries this panorama: 5.0.1**
 
 - **THE PRINCIPLES LIVE IN THE USER'S GLOBAL CLAUDE.md.** What weighs on every session belongs in the
   file the runtime loads whole, in the user's language; what is situational arrives through the hooks.

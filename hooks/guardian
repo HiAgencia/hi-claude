@@ -235,6 +235,38 @@ fi
 # QUOTED SEGMENTS FIRST, then the rest. Splitting the whole command on whitespace breaks any path
 # carrying spaces, and the damage is not silence: a fragment of the broken path can still match
 # something that exists, so the ask fires naming the WRONG token.
+#
+# A GENERATED ARTEFACT IS THE COPY, NOT THE ORIGINAL. The premise of this whole section is "there is no
+# copy" - and it does not hold for a build directory, a dependency tree or a cache: the source is alive
+# in the tree and one command rebuilds it. Deleting them is ROUTINE, so asking there is the notice that
+# shows up on ordinary work and gets learnt away, and then the one naming a real original arrives
+# already ignored. Matched by NAME on any component of the path, because `web/.next/cache` is the same
+# artefact as `.next`. A project adds its own names, one per line, in `.claude/hi-claude-disposable`.
+is_generated() {
+  local p extra_names
+  p="/$(norm "$1")/"
+  case "$p" in
+    */node_modules/*|*/bower_components/*|*/.pnpm-store/*|*/.yarn/cache/*) return 0 ;;
+    */.next/*|*/.nuxt/*|*/.svelte-kit/*|*/.astro/*|*/.angular/*|*/.output/*|*/.docusaurus/*|*/storybook-static/*) return 0 ;;
+    */.open-next/*|*/.wrangler/*|*/.vercel/*|*/.netlify/*|*/.serverless/*|*/.expo/*|*/.terraform/*) return 0 ;;
+    */dist/*|*/build/*|*/out/*|*/target/*|*/obj/*|*/coverage/*|*/htmlcov/*|*/.nyc_output/*) return 0 ;;
+    */.cache/*|*/.turbo/*|*/.vite/*|*/.parcel-cache/*|*/.rollup.cache/*|*/.sass-cache/*|*/.swc/*|*/.eslintcache/*) return 0 ;;
+    */__pycache__/*|*/.pytest_cache/*|*/.mypy_cache/*|*/.ruff_cache/*|*/.tox/*|*/.nox/*|*/.venv/*|*/venv/*|*/.eggs/*|*/.gradle/*) return 0 ;;
+    *.pyc/|*.egg-info/|*.tsbuildinfo/|*.class/) return 0 ;;
+  esac
+  extra_names=""
+  [ -n "$cwd" ] && [ -f "$(printf '%s' "$cwd" | sed 's#\\\\#\\#g')/.claude/hi-claude-disposable" ] \
+    && extra_names=$(cat "$(printf '%s' "$cwd" | sed 's#\\\\#\\#g')/.claude/hi-claude-disposable" 2>/dev/null)
+  while IFS= read -r name; do
+    name=$(printf '%s' "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')
+    case "$name" in ""|"#"*) continue ;; esac
+    case "$p" in */"$name"/*) return 0 ;; esac
+  done <<NAMES
+$extra_names
+NAMES
+  return 1
+}
+
 if [ "$tool" = "Bash" ]; then
   case "$command" in
     *rm\ *|*"Remove-Item"*|*unlink\ *)
@@ -260,6 +292,7 @@ SEGMENTS
         case "$(printf '%s' "$cand" | tr -d '\\/. ')" in "") continue ;; esac
         [ -e "$cand" ] || continue
         is_temp "$cand" && continue
+        is_generated "$cand" && continue
         # THE PREMISE ONLY HOLDS INSIDE A REPO. A path under no repo at all was never covered by "git
         # keeps it", so quoting that rule at it says nothing - and `ls-files` comes back empty both for
         # an ignored file inside a repo and for a path git was never going to see. An environment with
