@@ -29,7 +29,7 @@
   <a href="https://hiagencia.com/?utm_source=github&utm_medium=readme&utm_campaign=hi-claude&utm_content=hero_nav">hiagencia.com</a> ·
   <a href="https://www.linkedin.com/company/hiagencia/">LinkedIn</a> ·
   <a href="https://x.com/hiagenciacom">X (@hiagenciacom)</a> ·
-  <a href="#hi-claude-español">🇪🇸 Versión en español ↓</a>
+  <a href="#hi-claude-español"> Versión en español ↓</a>
 </p>
 
 ---
@@ -109,7 +109,7 @@ Four skills carry the parts of the craft that are not memory. They load when the
 After a few weeks of real work, an audit might find:
 
 - A CLAUDE.md bloated with pasted procedures → moved to `docs/`, one path reference left behind
-- A ROADMAP full of finished items marked ✅ → deleted; what shipped lives in the code and in `STATE.md`
+- A ROADMAP full of finished items marked sí → deleted; what shipped lives in the code and in `STATE.md`
 - The same preference saved three times in three wordings → merged into one
 - A production token sitting in plain text → flagged first, before anything else
 
@@ -160,7 +160,7 @@ The logo says *hi*. So does the plugin.
 
 ---
 
-<h1 align="center" id="hi-claude-español">hi-claude 🇪🇸</h1>
+<h1 align="center" id="hi-claude-español">hi-claude </h1>
 
 <p align="center"><strong>Lo primero que deberías decirle a Claude en cada proyecto nuevo.</strong></p>
 
@@ -239,7 +239,7 @@ Cuatro skills cargan las partes del oficio que no son memoria. Se abren cuando e
 Después de unas semanas de trabajo real, una auditoría podría encontrar:
 
 - Un CLAUDE.md hinchado con procedimientos pegados → movidos a `docs/`, queda una referencia de path
-- Un ROADMAP lleno de ítems terminados con ✅ → borrados; lo que salió vive en el código y en `ESTADO.md`
+- Un ROADMAP lleno de ítems terminados con sí → borrados; lo que salió vive en el código y en `ESTADO.md`
 - La misma preferencia guardada tres veces con tres redacciones → fusionada en una
 - Un token de producción en texto plano → marcado primero, antes que cualquier otra cosa
 

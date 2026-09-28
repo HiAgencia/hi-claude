@@ -57,7 +57,7 @@ tests/            run-hook-tests.sh + fixtures/ (stdin payloads)
 | skill: setup | Bootstrapping CLAUDE.md / docs / register / inventory from the es/en templates |
 | skill: audit (+ its six auditor agents) | Health check of CLAUDE.md, memory, ROADMAP, organization, inventory and currency; run before each release. Its `adoption` panorama is REWRITTEN every release and the bench goes red if it does not name the shipped version |
 | `bash tests/run-hook-tests.sh` | After ANY change to a hook, a template marker, or the doctrine |
-| `claude plugin validate .claude-plugin/plugin.json` | After changing manifests, hooks, skills or agents. **Point it at the plugin.json, NOT at the directory**: given the directory it validates only the marketplace manifest and returns ✔ with a dead skill inside |
+| `claude plugin validate .claude-plugin/plugin.json` | After changing manifests, hooks, skills or agents. **Point it at the plugin.json, NOT at the directory**: given the directory it validates only the marketplace manifest and returns green with a dead skill inside |
 | `plugin-dev` (agent `plugin-validator`) | Deeper structural review before a release, when the CLI check is not enough |
 | `hi-claude-internal/tests/triggering/run-evals.ps1` | MAINTAINERS ONLY (private repo) — after ANY change to a skill description; gate before shipping |
 | context7 (MCP) | Current Claude Code plugin/skill/hook API docs before editing manifests or hook scripts |

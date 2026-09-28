@@ -78,7 +78,7 @@ archivos es un costo sin contraparte, y el auditor propone la fusión cuando enc
 ## Gotchas del contrato — medidos, no deducidos
 
 - **El validador oficial se apunta al `plugin.json`, no al directorio.** Dado el directorio valida
-  SOLO el manifiesto del marketplace y devuelve ✔ con una skill muerta adentro. Medido: pasó verde
+  SOLO el manifiesto del marketplace y devuelve sí con una skill muerta adentro. Medido: pasó verde
   mientras `setup` tenía el frontmatter roto.
 - **Un `description:` en escalar plano termina en el primer `": "`.** YAML lee un mapping anidado y
   descarta TODO el frontmatter: la skill sigue resolviendo por nombre de directorio pero el modelo ya
